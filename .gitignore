@@ -51,3 +51,8 @@ backups/
 # ===== FICHIERS TEMPORAIRES =====
 *.tmp
 *.temp
+
+.env
+.env.local
+.env.production
+backend/.env
