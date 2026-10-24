@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyber Famille — Hors ligne</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0B1220;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .card {
+      max-width: 480px;
+      width: 100%;
+      background: #111C2E;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 24px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    .icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: rgba(249, 115, 22, 0.1);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 14px;
+      color: #9CA3AF;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px 24px;
+      background: #F97316;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: #EA580C;
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .info {
+      margin-top: 24px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 12px;
+      font-size: 12px;
+      color: #6B7280;
+    }
+
+    .logo {
+      margin-top: 32px;
+      font-size: 12px;
+      color: #4B5563;
+      letter-spacing: 2px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📡</div>
+    <h1>Connexion perdue</h1>
+    <p>
+      Vous êtes actuellement <b>hors ligne</b>. Vérifiez votre connexion
+      Internet et réessayez.
+    </p>
+    <button onclick="window.location.reload()">
+      🔄 Réessayer
+    </button>
+    <div class="info">
+      💡 Astuce : vérifiez que le Wi-Fi est activé et que le routeur est allumé.
+    </div>
+    <div class="logo">CYBER FAMILLE</div>
+  </div>
+
+  <script>
+    // Détecter automatiquement le retour en ligne
+    window.addEventListener("online", () => {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>

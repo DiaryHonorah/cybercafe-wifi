@@ -1,0 +1,147 @@
+{
+  "nav": {
+    "accueil": "Fandraisana",
+    "services": "Tolotra",
+    "tarifs": "Vidiny",
+    "reservation": "Fisoratana",
+    "fidelite": "Tsy fivadihana",
+    "blog": "Bilaogy",
+    "newsletter": "Gazetiboky",
+    "galerie": "Sary",
+    "temoignages": "Fijoroana",
+    "faq": "Fanontaniana",
+    "contact": "Fifandraisana",
+    "espaceAdmin": "Efitrano mpitantana",
+    "seConnecter": "Hiditra amin'ny Wi-Fi"
+  },
+  "accueil": {
+    "badge": "Starlink Wi-Fi Haingana",
+    "titre1": "Tongasoa eto amin'ny",
+    "titre2": "Cyber Famille",
+    "titre3": "Solofoson",
+    "description1": "Miaina ny traikefa amin'ny fifandraisana Internet",
+    "description2": "tena haingana",
+    "description3": "noho ny teknolojia zanabolana Starlink.",
+    "description4": "Manonta, manao scan, mandeha amin'ny Internet — amin'ny toerana iray.",
+    "boutonWifi": "Hiditra amin'ny Wi-Fi",
+    "boutonTarifs": "Hijery ny vidiny",
+    "stat1": "Mpanjifa afa-po",
+    "stat2": "Misokatra",
+    "stat3": "Manomboka amin'ny",
+    "badgeServices": "Ny tolotray",
+    "titreServices": "Izay rehetra ilainao ao amin'ny toerana iray",
+    "badgeAvantages": "Nahoana izahay?",
+    "titreAvantages": "Ny tombontsoa",
+    "sousTitreAvantages": "Fantaro ny antony mahatonga anay ho safidy tsara indrindra",
+    "badgeTarifs": "Vidiny",
+    "titreTarifs": "Vidiny mazava sy tsotra",
+    "boutonVoirTarifs": "Hijery ny vidiny rehetra",
+    "ctaTitre": "Vonona hiaina traikefa vaovao?",
+    "ctaDescription": "Miaraha aminay ao Ambalavao ary ankafizo ny fifandraisana Internet haingana indrindra ao amin'ny faritra.",
+    "ctaTrouver": "Hahita anay",
+    "ctaAppeler": "Hiantso anay"
+  },
+  "servicesPage": {
+    "badge": "Ny tolotray",
+    "titre": "Ny tolotray rehetra",
+    "sousTitre": "Fantaro izay rehetra azon'ny Cyber Famille Solofoson atao ho anao",
+    "ctaTitre": "Mila tolotra manokana?",
+    "ctaSousTitre": "Mifandraisa aminay hiresaka momba ny filanao",
+    "ctaBouton": "Mifandraisa aminay"
+  },
+  "tarifsPage": {
+    "badge": "Vidiny",
+    "titre": "Vidiny mazava",
+    "sousTitre": "Misafidiana ny forfait mety aminao",
+    "titreForfaits": "Ny forfait Wi-Fi",
+    "populaire": "Malaza",
+    "choisir": "Misafidiana ity",
+    "titreAutres": "Tolotra hafa",
+    "sousTitreAutres": "Vidin'ny tolotra fanampiny",
+    "ctaTitre": "Manana fanontaniana momba ny vidiny?",
+    "ctaDescription": "Vonona hamaly ny fanontanianao ny ekipanay",
+    "ctaBouton": "Mifandraisa aminay"
+  },
+  "reservationPage": {
+    "badge": "Fisoratana an-tserasera",
+    "titre": "Misorata toerana",
+    "sousTitre": "Misorata mialoha ary antoka ny toeranao ao amin'ny cybercafé-nao"
+  },
+  "fidelitePage": {
+    "badge": "Fandaharana tsy fivadihana",
+    "titre": "Karatra tsy fivadihana",
+    "sousTitre": "Mahazoa isa amin'ny fividianana rehetra ary misokatra valisoa manokana"
+  },
+  "blogPage": {
+    "badge": "Bilaogy & Vaovao",
+    "titre": "Fantaro ny vaovao",
+    "sousTitre": "Torohevitra, tolotra ary vaovao ao amin'ny cybercafé-nao ao Ambalavao"
+  },
+  "newsletterPage": {
+    "badge": "Gazetiboky",
+    "titre": "Mijanona ho fantatra",
+    "sousTitre": "Mahazoa ny tolotray, torohevitra ary vaovao ao amin'ny mailakao"
+  },
+  "galeriePage": {
+    "badge": "Sary",
+    "titre": "Fantaro ny tontolonay",
+    "sousTitre": "Topi-maso ny cybercafé-nao ao Ambalavao",
+    "filtreTout": "Hijery daholo",
+    "filtreEspace": "Toerana",
+    "filtreEquipement": "Fitaovana",
+    "filtreServices": "Tolotra",
+    "messageTitre": "Hisy sary tena izy",
+    "messageDesc": "Hisy sary tena izy ny cybercafé-nao tsy ho ela. Mandritra izany, fantaro ny tolotray."
+  },
+  "temoignagesPage": {
+    "badge": "Fijoroana",
+    "titre": "Izay lazain'ny mpanjifanay",
+    "sousTitre": "Fantaro ny hevitry ny olona matoky anay",
+    "statClients": "Mpanjifa afa-po",
+    "statNote": "Naoty antonony",
+    "statOuvert": "Misokatra",
+    "ctaTitre": "Efa nampiasa ny tolotray ianao?",
+    "ctaDescription": "Zarao ny traikefanao ary ampio izahay hanatsara. Manan-danja aminao ny hevitrao.",
+    "ctaBouton": "Hamela hevitra"
+  },
+  "faqPage": {
+    "badge": "Fanontaniana",
+    "titre": "Fanontaniana mahazatra",
+    "sousTitre": "Mitadiava valiny haingana",
+    "ctaTitre": "Tsy nahita ny valiny?",
+    "ctaDescription": "Eto ny ekipanay hanampy anao. Mifandraisa aminay izao.",
+    "ctaBouton": "Mifandraisa aminay"
+  },
+  "contactPage": {
+    "badge": "Fifandraisana",
+    "titre": "Mifandraisa aminay",
+    "sousTitre": "Mihaino anao izahay 7j/7",
+    "titreInfos": "Ny adiresinay",
+    "titreFormulaire": "Alefaso hafatra aminay",
+    "sousTitreFormulaire": "Hamaly anao haingana izahay",
+    "labelNom": "Ny anaranao",
+    "labelTelephone": "Finday",
+    "labelEmail": "Mailaka",
+    "labelSujet": "Lohahevitra",
+    "labelMessage": "Hafatra",
+    "placeholderNom": "Rakoto Jean",
+    "placeholderTelephone": "+261 34 XX XXX XX",
+    "placeholderEmail": "ohatra@email.com",
+    "placeholderSujet": "Ohatra: Fangatahana fanazavana",
+    "placeholderMessage": "Soraty eto ny hafatrao...",
+    "boutonEnvoyer": "Alefaso ny hafatra",
+    "boutonEnvoiEnCours": "Mandefa...",
+    "messageEnvoye": "Nalefa ny hafatra!",
+    "messageEnvoyeDesc": "Hamaly anao tsy ho ela izahay.",
+    "titreCarte": "Hahita anay mora foana",
+    "boutonItineraire": "Hijery ny lalana"
+  },
+  "footer": {
+    "description": "Ny cybercafé matoky anao ao Ambalavao. Fifandraisana Starlink haingana, fanontana, photocopie sy ny maro hafa.",
+    "navigation": "Fizahantany",
+    "contact": "Fifandraisana",
+    "droits": "Zo rehetra voatokana.",
+    "propulse": "Entin'ny",
+    "starlink": "Starlink Wi-Fi"
+  }
+}

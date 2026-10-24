@@ -1,0 +1,57 @@
+# ============================================
+# Cybersécurité — Cyber Famille
+# ============================================
+
+# Activer le moteur de réécriture
+RewriteEngine On
+
+# Empêcher l'accès direct aux dossiers sensibles
+RewriteRule ^config/ - [F,L]
+RewriteRule ^libs/ - [F,L]
+RewriteRule ^backups/ - [F,L]
+RewriteRule ^websocket/vendor/ - [F,L]
+RewriteRule \.sql$ - [F,L]
+RewriteRule \.log$ - [F,L]
+
+# Protéger .htaccess lui-même
+<Files ~ "^\.ht">
+    Require all denied
+</Files>
+
+# Empêcher l'affichage du contenu des dossiers
+Options -Indexes
+
+# ============================================
+# ROUTAGE : Toutes les requêtes → index.php
+# ============================================
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# ============================================
+# SÉCURITÉ : Bloquer les user agents suspects
+# ============================================
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_USER_AGENT} (libwww-perl|wget|python|nikto|curl|scan|java|winhttp|clshttp|loader) [NC,OR]
+    RewriteCond %{HTTP_USER_AGENT} (<|>|'|%0A|%0D|%27|%3C|%3E|%00) [NC,OR]
+    RewriteCond %{HTTP_USER_AGENT} (;|<|>|'|"|\)|\(|%0A|%0D|%22|%27|%28|%29|%3C|%3E|%00).*(libwww-perl|wget|python|nikto|curl|scan|java|winhttp|HTTrack|clshttp|archiver|loader|email|harvest|extract|grab|miner) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# ============================================
+# PERFORMANCE : Compression GZIP
+# ============================================
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript application/json
+</IfModule>
+
+# ============================================
+# CACHE
+# ============================================
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType application/json "access plus 0 seconds"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+</IfModule>

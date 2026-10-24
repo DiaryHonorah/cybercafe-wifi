@@ -1,0 +1,53 @@
+# ===== DÉPENDANCES =====
+node_modules/
+vendor/
+
+# ===== BUILD =====
+dist/
+build/
+
+# ===== ENVIRONNEMENT (SENSIBLE) =====
+.env
+.env.local
+.env.production
+*.env
+
+# ===== CONFIGURATION LOCALE =====
+backend/config/mail.php
+backend/config/database.php
+backend/config/security.php
+
+# ===== UPLOADS (IMAGES) =====
+backend/uploads/
+frontend/public/uploads/
+
+# ===== LOGS =====
+*.log
+npm-debug.log*
+backend/logs/
+
+# ===== CACHE =====
+.vite/
+.cache/
+*.cache
+
+# ===== SYSTÈME =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===== BACKUPS =====
+backups/
+*.sql
+*.zip
+*.rar
+
+# ===== FICHIERS TEMPORAIRES =====
+*.tmp
+*.temp

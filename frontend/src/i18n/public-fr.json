@@ -1,0 +1,147 @@
+{
+  "nav": {
+    "accueil": "Accueil",
+    "services": "Services",
+    "tarifs": "Tarifs",
+    "reservation": "Réservation",
+    "fidelite": "Fidélité",
+    "blog": "Blog",
+    "newsletter": "Newsletter",
+    "galerie": "Galerie",
+    "temoignages": "Témoignages",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "espaceAdmin": "Espace admin",
+    "seConnecter": "Se connecter Wi-Fi"
+  },
+  "accueil": {
+    "badge": "Starlink Wi-Fi Haut Débit",
+    "titre1": "Bienvenue chez",
+    "titre2": "Cyber Famille",
+    "titre3": "Solofoson",
+    "description1": "Vivez l'expérience d'une connexion Internet",
+    "description2": "ultra rapide",
+    "description3": "grâce à la technologie satellite Starlink.",
+    "description4": "Imprimez, scannez, naviguez — tout au même endroit.",
+    "boutonWifi": "Se connecter au Wi-Fi",
+    "boutonTarifs": "Voir les tarifs",
+    "stat1": "Clients satisfaits",
+    "stat2": "Ouvert",
+    "stat3": "À partir de",
+    "badgeServices": "Nos services",
+    "titreServices": "Tout ce dont vous avez besoin en un seul endroit",
+    "badgeAvantages": "Pourquoi nous ?",
+    "titreAvantages": "Nos avantages",
+    "sousTitreAvantages": "Découvrez pourquoi nous sommes le meilleur choix",
+    "badgeTarifs": "Tarifs",
+    "titreTarifs": "Des prix simples et clairs",
+    "boutonVoirTarifs": "Voir tous les tarifs",
+    "ctaTitre": "Prêt à vivre une nouvelle expérience ?",
+    "ctaDescription": "Rejoignez-nous à Ambalavao et profitez de la connexion Internet la plus rapide de la région.",
+    "ctaTrouver": "Nous trouver",
+    "ctaAppeler": "Nous appeler"
+  },
+  "servicesPage": {
+    "badge": "Nos services",
+    "titre": "Tous nos services",
+    "sousTitre": "Découvrez tout ce que Cyber Famille Solofoson peut faire pour vous",
+    "ctaTitre": "Besoin d'un service particulier ?",
+    "ctaSousTitre": "Contactez-nous pour discuter de vos besoins",
+    "ctaBouton": "Nous contacter"
+  },
+  "tarifsPage": {
+    "badge": "Tarifs",
+    "titre": "Des prix transparents",
+    "sousTitre": "Choisissez le forfait qui vous convient le mieux",
+    "titreForfaits": "Nos forfaits Wi-Fi",
+    "populaire": "Populaire",
+    "choisir": "Choisir ce forfait",
+    "titreAutres": "Autres services",
+    "sousTitreAutres": "Tarifs des services complémentaires",
+    "ctaTitre": "Une question sur nos tarifs ?",
+    "ctaDescription": "Notre équipe est disponible pour répondre à toutes vos questions",
+    "ctaBouton": "Nous contacter"
+  },
+  "reservationPage": {
+    "badge": "Réservation en ligne",
+    "titre": "Réservez votre poste",
+    "sousTitre": "Réservez à l'avance et garantissez votre place dans notre cybercafé"
+  },
+  "fidelitePage": {
+    "badge": "Programme de fidélité",
+    "titre": "Carte de fidélité",
+    "sousTitre": "Gagnez des points à chaque achat et débloquez des récompenses exclusives"
+  },
+  "blogPage": {
+    "badge": "Blog & Actualités",
+    "titre": "Découvrez nos actualités",
+    "sousTitre": "Conseils, promotions et nouveautés de votre cybercafé à Ambalavao"
+  },
+  "newsletterPage": {
+    "badge": "Newsletter",
+    "titre": "Restez informé",
+    "sousTitre": "Recevez nos promotions, conseils et actualités directement dans votre boîte mail"
+  },
+  "galeriePage": {
+    "badge": "Galerie",
+    "titre": "Découvrez notre univers",
+    "sousTitre": "Un aperçu de votre cybercafé à Ambalavao",
+    "filtreTout": "Tout voir",
+    "filtreEspace": "Espace",
+    "filtreEquipement": "Équipement",
+    "filtreServices": "Services",
+    "messageTitre": "Photos réelles à venir",
+    "messageDesc": "Les photos réelles de notre cybercafé seront ajoutées très bientôt. En attendant, découvrez nos services."
+  },
+  "temoignagesPage": {
+    "badge": "Témoignages",
+    "titre": "Ce que disent nos clients",
+    "sousTitre": "Découvrez les avis de ceux qui nous font confiance",
+    "statClients": "Clients satisfaits",
+    "statNote": "Note moyenne",
+    "statOuvert": "Ouvert",
+    "ctaTitre": "Vous avez utilisé nos services ?",
+    "ctaDescription": "Partagez votre expérience et aidez-nous à nous améliorer. Votre avis compte énormément pour nous.",
+    "ctaBouton": "Laisser un avis"
+  },
+  "faqPage": {
+    "badge": "FAQ",
+    "titre": "Questions fréquentes",
+    "sousTitre": "Trouvez rapidement les réponses à vos questions",
+    "ctaTitre": "Vous n'avez pas trouvé votre réponse ?",
+    "ctaDescription": "Notre équipe est là pour vous aider. Contactez-nous dès maintenant.",
+    "ctaBouton": "Nous contacter"
+  },
+  "contactPage": {
+    "badge": "Contact",
+    "titre": "Contactez-nous",
+    "sousTitre": "Nous sommes à votre écoute 7j/7",
+    "titreInfos": "Nos coordonnées",
+    "titreFormulaire": "Envoyez-nous un message",
+    "sousTitreFormulaire": "Nous vous répondrons dans les plus brefs délais",
+    "labelNom": "Votre nom",
+    "labelTelephone": "Téléphone",
+    "labelEmail": "Email",
+    "labelSujet": "Sujet",
+    "labelMessage": "Message",
+    "placeholderNom": "Rakoto Jean",
+    "placeholderTelephone": "+261 34 XX XXX XX",
+    "placeholderEmail": "exemple@email.com",
+    "placeholderSujet": "Ex. Demande d'information",
+    "placeholderMessage": "Écrivez votre message ici...",
+    "boutonEnvoyer": "Envoyer le message",
+    "boutonEnvoiEnCours": "Envoi en cours...",
+    "messageEnvoye": "Message envoyé !",
+    "messageEnvoyeDesc": "Nous vous répondrons très bientôt.",
+    "titreCarte": "Trouvez-nous facilement",
+    "boutonItineraire": "Voir l'itinéraire"
+  },
+  "footer": {
+    "description": "Votre cybercafé de confiance à Ambalavao. Connexion Starlink haut débit, impression, photocopie et bien plus encore.",
+    "navigation": "Navigation",
+    "contact": "Contact",
+    "droits": "Tous droits réservés.",
+    "propulse": "Propulsé par",
+    "starlink": "Starlink Wi-Fi"
+  }
+}
