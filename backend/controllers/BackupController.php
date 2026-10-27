@@ -1,206 +1,260 @@
 <?php
-require_once __DIR__ . '/../config/database.php';
+/**
+ * Contrôleur Backup
+ * Gère les sauvegardes (manuelles + automatiques)
+ */
 
-class BackupController {
+require_once __DIR__ . '/../services/BackupService.php';
 
-    private $backupDir;
-    private $dbConfig;
+class BackupController
+{
+    private $db;
+    private $service;
 
-    public function __construct() {
-        $this->backupDir = __DIR__ . '/../backups';
-        if (!is_dir($this->backupDir)) {
-            mkdir($this->backupDir, 0777, true);
+    public function __construct()
+    {
+        $this->db = $this->connecter();
+        $this->service = new BackupService($this->db);
+    }
+
+    private function connecter()
+    {
+        $configPath = __DIR__ . '/../config/database.php';
+        if (!file_exists($configPath)) {
+            throw new Exception("Fichier config/database.php introuvable");
         }
-        $this->dbConfig = [
-            'host' => 'localhost',
-            'name' => 'cybercafe_db',
-            'user' => 'root',
-            'pass' => ''
-        ];
+        require_once $configPath;
+        if (class_exists('Database')) {
+            $database = new Database();
+            return $database->getConnection();
+        }
+        throw new Exception("Classe Database introuvable");
     }
 
     /**
-     * Créer une sauvegarde SQL
      * POST /api/backup/creer
-     * Body optionnel : { "type": "manuelle" | "automatique" }
      */
-    public function creer() {
-        $input = json_decode(file_get_contents("php://input"), true);
-        $type = $input['type'] ?? 'manuelle';
-
-        $date = date('Y-m-d_H-i-s');
-        $nomFichier = "backup_cybercafe_{$date}.sql";
-        $cheminFichier = $this->backupDir . '/' . $nomFichier;
-
+    public function creer()
+    {
         try {
-            $db = (new Database())->getConnection();
-
-            $tables = $db->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
-
-            $sql = "-- ========================================\n";
-            $sql .= "-- Sauvegarde Cyber Famille\n";
-            $sql .= "-- Date : " . date('Y-m-d H:i:s') . "\n";
-            $sql .= "-- Base : {$this->dbConfig['name']}\n";
-            $sql .= "-- Type : $type\n";
-            $sql .= "-- ========================================\n\n";
-            $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
-
-            foreach ($tables as $table) {
-                $create = $db->query("SHOW CREATE TABLE `$table`")->fetch(PDO::FETCH_ASSOC);
-                $sql .= "-- ----------------------------\n";
-                $sql .= "-- Table : $table\n";
-                $sql .= "-- ----------------------------\n";
-                $sql .= "DROP TABLE IF EXISTS `$table`;\n";
-                $sql .= $create['Create Table'] . ";\n\n";
-
-                $rows = $db->query("SELECT * FROM `$table`")->fetchAll(PDO::FETCH_ASSOC);
-                if (!empty($rows)) {
-                    $sql .= "INSERT INTO `$table` VALUES\n";
-                    $values = [];
-                    foreach ($rows as $row) {
-                        $vals = array_map(function ($v) use ($db) {
-                            if ($v === null) return 'NULL';
-                            return $db->quote($v);
-                        }, array_values($row));
-                        $values[] = '(' . implode(', ', $vals) . ')';
-                    }
-                    $sql .= implode(",\n", $values) . ";\n\n";
-                }
-            }
-
-            $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
-
-            file_put_contents($cheminFichier, $sql);
-            $taille = filesize($cheminFichier);
-
-            // Journaliser en base
-            $stmt = $db->prepare("
-                INSERT INTO sauvegardes (fichier, taille, type)
-                VALUES (?, ?, ?)
-            ");
-            $stmt->execute([$nomFichier, $taille, $type]);
-
-            // Nettoyage : garder les 20 dernières sauvegardes max
-            $this->nettoyerAnciennes(20);
+            $admin = $this->verifierAdmin();
+            
+            $resultat = $this->service->creerBackup('manuel', $admin['id']);
 
             echo json_encode([
-                "success" => true,
-                "fichier" => $nomFichier,
-                "taille" => $taille,
-                "date" => $date
+                'success' => true,
+                'message' => 'Sauvegarde créée avec succès',
+                'backup' => $resultat,
             ]);
+
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode([
-                "erreur" => "Échec de la sauvegarde",
-                "detail" => $e->getMessage()
-            ]);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 
     /**
-     * Lister les sauvegardes
      * GET /api/backup/liste
      */
-    public function liste() {
-        $db = (new Database())->getConnection();
+    public function liste()
+    {
+        try {
+            $this->verifierAdmin();
+            
+            $backups = $this->service->liste();
+            $stats = $this->service->stats();
 
-        // Chercher dans le dossier
-        $fichiers = glob($this->backupDir . '/*.sql');
-        $resultat = [];
+            echo json_encode([
+                'success' => true,
+                'backups' => $backups,
+                'stats' => $stats,
+            ]);
 
-        foreach ($fichiers as $f) {
-            $nom = basename($f);
-            $stmt = $db->prepare("SELECT type FROM sauvegardes WHERE fichier = ? LIMIT 1");
-            $stmt->execute([$nom]);
-            $type = $stmt->fetchColumn() ?: 'manuelle';
-
-            $resultat[] = [
-                "fichier" => $nom,
-                "taille" => filesize($f),
-                "date" => date('Y-m-d H:i:s', filemtime($f)),
-                "type" => $type
-            ];
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        usort($resultat, fn($a, $b) => strcmp($b['date'], $a['date']));
-
-        echo json_encode($resultat);
     }
 
     /**
-     * Télécharger une sauvegarde
-     * GET /api/backup/telecharger?fichier=backup_xxx.sql
+     * GET /api/backup/telecharger?id=X
      */
-    public function telecharger() {
-        $fichier = basename($_GET['fichier'] ?? '');
+    public function telecharger()
+    {
+        try {
+            $this->verifierAdmin();
+            
+            $id = intval($_GET['id'] ?? 0);
+            if ($id <= 0) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'ID requis']);
+                return;
+            }
 
-        if (!$fichier || !preg_match('/^backup_cybercafe_[\w\-]+\.sql$/', $fichier)) {
-            http_response_code(400);
-            echo "Nom de fichier invalide";
-            return;
+            $backup = $this->service->telecharger($id);
+
+            // Envoyer le fichier
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="' . $backup['nom'] . '"');
+            header('Content-Length: ' . $backup['taille']);
+            readfile($backup['chemin']);
+            exit;
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $chemin = $this->backupDir . '/' . $fichier;
-        if (!file_exists($chemin)) {
-            http_response_code(404);
-            echo "Fichier introuvable";
-            return;
-        }
-
-        header('Content-Type: application/sql');
-        header('Content-Disposition: attachment; filename="' . $fichier . '"');
-        header('Content-Length: ' . filesize($chemin));
-        readfile($chemin);
-        exit;
     }
 
     /**
-     * Supprimer une sauvegarde
      * POST /api/backup/supprimer
      */
-    public function supprimer() {
-        $data = json_decode(file_get_contents("php://input"), true);
-        $fichier = basename($data['fichier'] ?? '');
+    public function supprimer()
+    {
+        try {
+            $this->verifierAdmin();
+            
+            $data = json_decode(file_get_contents('php://input'), true);
+            $id = intval($data['id'] ?? 0);
 
-        if (!$fichier || !preg_match('/^backup_cybercafe_[\w\-]+\.sql$/', $fichier)) {
+            if ($id <= 0) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'ID requis']);
+                return;
+            }
+
+            $this->service->supprimer($id);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Backup supprimé',
+            ]);
+
+        } catch (Exception $e) {
             http_response_code(400);
-            echo json_encode(["erreur" => "Nom de fichier invalide"]);
-            return;
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
-
-        $chemin = $this->backupDir . '/' . $fichier;
-        if (!file_exists($chemin)) {
-            http_response_code(404);
-            echo json_encode(["erreur" => "Fichier introuvable"]);
-            return;
-        }
-
-        unlink($chemin);
-
-        $db = (new Database())->getConnection();
-        $stmt = $db->prepare("DELETE FROM sauvegardes WHERE fichier = ?");
-        $stmt->execute([$fichier]);
-
-        echo json_encode(["success" => true]);
     }
 
     /**
-     * Nettoyer les anciennes sauvegardes (garder les N plus récentes)
+     * GET /api/backup/config
      */
-    private function nettoyerAnciennes($max = 20) {
-        $fichiers = glob($this->backupDir . '/*.sql');
-        if (count($fichiers) <= $max) return;
+    public function getConfig()
+    {
+        try {
+            $this->verifierAdmin();
 
-        usort($fichiers, fn($a, $b) => filemtime($b) - filemtime($a));
-        $aSupprimer = array_slice($fichiers, $max);
+            $stmt = $this->db->query("SELECT * FROM backups_config LIMIT 1");
+            $config = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $db = (new Database())->getConnection();
-        foreach ($aSupprimer as $f) {
-            $nom = basename($f);
-            @unlink($f);
-            $stmt = $db->prepare("DELETE FROM sauvegardes WHERE fichier = ?");
-            $stmt->execute([$nom]);
+            echo json_encode(['success' => true, 'config' => $config]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * POST /api/backup/config
+     */
+    public function saveConfig()
+    {
+        try {
+            $this->verifierAdmin();
+
+            $data = json_decode(file_get_contents('php://input'), true);
+            $this->service->sauvegarderConfig($data);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Configuration sauvegardée',
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * GET /api/backup/auto
+     * Appelé par cron ou à chaque visite admin
+     */
+    public function auto()
+    {
+        try {
+            if (!$this->service->doitFaireBackupAuto()) {
+                echo json_encode(['success' => true, 'message' => 'Pas de backup nécessaire']);
+                return;
+            }
+
+            $resultat = $this->service->creerBackup('automatique');
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Backup automatique créé',
+                'backup' => $resultat,
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    // =====================================================
+    // AUTHENTIFICATION
+    // =====================================================
+
+    private function verifierAdmin()
+    {
+        $headers = $this->recupererHeaders();
+        $authHeader = $headers['authorization'] ?? $headers['Authorization'] ?? '';
+
+        $token = '';
+        if (preg_match('/Bearer\s+(.+)/i', $authHeader, $matches)) {
+            $token = trim($matches[1]);
+        }
+
+        if (empty($token)) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Token manquant']);
+            exit;
+        }
+
+        $stmt = $this->db->prepare("
+            SELECT a.id, a.nom, a.email, a.role
+            FROM sessions_admin s
+            JOIN admins a ON a.id = s.admin_id
+            WHERE s.token = ? AND s.expire_le > NOW()
+        ");
+        $stmt->execute([$token]);
+        $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$admin) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Token invalide']);
+            exit;
+        }
+
+        return $admin;
+    }
+
+    private function recupererHeaders()
+    {
+        if (function_exists('getallheaders')) {
+            return getallheaders();
+        }
+        $headers = [];
+        foreach ($_SERVER as $name => $value) {
+            if (substr($name, 0, 5) === 'HTTP_') {
+                $headerName = str_replace(' ', '-', ucwords(
+                    strtolower(str_replace('_', ' ', substr($name, 5)))
+                ));
+                $headers[$headerName] = $value;
+            }
+        }
+        return $headers;
     }
 }

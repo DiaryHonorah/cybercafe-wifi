@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   Menu,
   X,
@@ -8,8 +8,12 @@ import {
   MapPin,
   Share2,
   LogIn,
+  User,
+  LogOut,
+  ChevronDown,
 } from "lucide-react";
 import { usePublicLang } from "../context/PublicLangContext";
+import { useClientAuth } from "../context/ClientAuthContext";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import Logo from "../components/Logo";
 import PromoBanner from "../components/PromoBanner";
@@ -18,7 +22,10 @@ import ChatWidget from "../components/ChatWidget";
 
 export default function PublicLayout() {
   const [menuOuvert, setMenuOuvert] = useState(false);
+  const [menuCompte, setMenuCompte] = useState(false);
   const { t, langue } = usePublicLang();
+  const { client, isAuthenticated, deconnexion } = useClientAuth();
+  const navigate = useNavigate();
 
   const liens = [
     { to: "/", labelKey: "nav.accueil", end: true },
@@ -28,21 +35,33 @@ export default function PublicLayout() {
     { to: "/fidelite", labelKey: "nav.fidelite" },
     { to: "/blog", labelKey: "nav.blog" },
     { to: "/galerie", labelKey: "nav.galerie" },
-    { to: "/temoignages", labelKey: "nav.temoignages" },
     { to: "/faq", labelKey: "nav.faq" },
     { to: "/contact", labelKey: "nav.contact" },
   ];
 
+  const handleLogoutClient = async () => {
+    setMenuCompte(false);
+    await deconnexion();
+    navigate("/");
+  };
+
+  const initiales = client
+    ? (client.nom || "C")
+        .split(" ")
+        .map((m) => m[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "";
+
   return (
     <div className="public-page">
-      {/* ===== BANDEAU PROMO ===== */}
       <PromoBanner
         message="📢 Nouveau : Starlink Wi-Fi maintenant disponible !"
         messageMg="📢 Vaovao : Starlink Wi-Fi misy izao!"
         lien="/services"
       />
 
-      {/* ===== HEADER ===== */}
       <header className="sticky top-0 z-50 backdrop-blur-lg bg-[#0A1628]/80 border-b border-[#1E40AF]/20">
         <div className="public-container">
           <div className="flex items-center justify-between h-16">
@@ -71,22 +90,82 @@ export default function PublicLayout() {
               ))}
             </nav>
 
-            {/* CTA admin + langue */}
+            {/* CTA droite */}
             <div className="hidden xl:flex items-center gap-2">
               <LanguageSwitcher />
-              <Link
-                to="/login"
-                className="flex items-center gap-1.5 text-xs text-gray-300 hover:text-[#67E8F9] transition"
-              >
-                <LogIn size={14} />
-                {t("nav.espaceAdmin")}
-              </Link>
-              <Link to="/portail" className="btn-public-cyan text-xs px-3 py-2">
-                {t("nav.seConnecter")}
-              </Link>
+
+              {isAuthenticated ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setMenuCompte(!menuCompte)}
+                    className="flex items-center gap-2 p-1 pr-2 rounded-lg hover:bg-white/5 transition"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#06B6D4] to-[#1E40AF] flex items-center justify-center text-white font-bold text-xs">
+                      {initiales}
+                    </div>
+                    <span className="text-xs font-medium text-gray-300 max-w-[100px] truncate">
+                      {client?.nom}
+                    </span>
+                    <ChevronDown size={14} className="text-gray-400" />
+                  </button>
+
+                  {menuCompte && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setMenuCompte(false)}
+                      />
+                      <div className="absolute right-0 top-full mt-2 w-56 bg-[#112240] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+                        <div className="p-4 border-b border-white/10">
+                          <p className="text-sm font-medium truncate">
+                            {client?.nom}
+                          </p>
+                          <p className="text-xs text-gray-400 truncate">
+                            {client?.email}
+                          </p>
+                        </div>
+                        <Link
+                          to="/mon-compte"
+                          onClick={() => setMenuCompte(false)}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition text-left text-sm"
+                        >
+                          <User size={16} className="text-gray-400" />
+                          Mon espace
+                        </Link>
+                        <button
+                          onClick={handleLogoutClient}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition text-left text-sm text-red-400 border-t border-white/10"
+                        >
+                          <LogOut size={16} />
+                          Se déconnecter
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="flex items-center gap-1.5 text-xs text-gray-300 hover:text-[#67E8F9] transition"
+                  >
+                    <LogIn size={14} />
+                    Admin
+                  </Link>
+                  <Link
+                    to="/connexion"
+                    className="text-xs text-gray-300 hover:text-[#67E8F9] transition"
+                  >
+                    Connexion
+                  </Link>
+                  <Link to="/portail" className="btn-public-cyan text-xs px-3 py-2">
+                    {t("nav.seConnecter")}
+                  </Link>
+                </>
+              )}
             </div>
 
-            {/* Bouton menu mobile/tablette */}
+            {/* Menu mobile */}
             <button
               onClick={() => setMenuOuvert(!menuOuvert)}
               className="xl:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 transition"
@@ -97,7 +176,7 @@ export default function PublicLayout() {
           </div>
         </div>
 
-        {/* Menu mobile/tablette */}
+        {/* Menu mobile */}
         {menuOuvert && (
           <div className="xl:hidden border-t border-[#1E40AF]/20 bg-[#0A1628]">
             <nav className="public-container py-4 space-y-1">
@@ -122,35 +201,68 @@ export default function PublicLayout() {
                 <div className="flex justify-end px-4">
                   <LanguageSwitcher />
                 </div>
-                <Link
-                  to="/login"
-                  onClick={() => setMenuOuvert(false)}
-                  className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300"
-                >
-                  <LogIn size={16} />
-                  {t("nav.espaceAdmin")}
-                </Link>
-                <Link
-                  to="/portail"
-                  onClick={() => setMenuOuvert(false)}
-                  className="btn-public-cyan text-sm w-full justify-center"
-                >
-                  {t("nav.seConnecter")}
-                </Link>
+
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      to="/mon-compte"
+                      onClick={() => setMenuOuvert(false)}
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-[#67E8F9] bg-[#06B6D4]/10 rounded-lg"
+                    >
+                      <User size={16} />
+                      Mon espace ({client?.nom})
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setMenuOuvert(false);
+                        handleLogoutClient();
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400"
+                    >
+                      <LogOut size={16} />
+                      Se déconnecter
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/connexion"
+                      onClick={() => setMenuOuvert(false)}
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300"
+                    >
+                      <LogIn size={16} />
+                      Connexion
+                    </Link>
+                    <Link
+                      to="/inscription"
+                      onClick={() => setMenuOuvert(false)}
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-[#67E8F9]"
+                    >
+                      <User size={16} />
+                      Inscription
+                    </Link>
+                    <Link
+                      to="/portail"
+                      onClick={() => setMenuOuvert(false)}
+                      className="btn-public-cyan text-sm w-full justify-center"
+                    >
+                      {t("nav.seConnecter")}
+                    </Link>
+                  </>
+                )}
               </div>
             </nav>
           </div>
         )}
       </header>
 
-      {/* ===== CONTENU ===== */}
       <main>
         <Outlet />
       </main>
 
       <ScrollToTop />
+      <ChatWidget />
 
-      {/* ===== FOOTER ===== */}
       <footer className="bg-[#0A1628] border-t border-[#1E40AF]/20 py-12 mt-20">
         <div className="public-container">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
@@ -252,9 +364,6 @@ export default function PublicLayout() {
           </div>
         </div>
       </footer>
-
-      {/* ===== CHAT WIDGET ===== */}
-      <ChatWidget />
     </div>
   );
 }

@@ -50,12 +50,43 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
     echo json_encode([
         "message" => "API Cybercafé opérationnelle ✅",
-        "version" => "7.2",
+        "version" => "7.9",
         "routes" => [
-            "== Auth ==",
+            "== Auth Admin ==",
             "POST /api/auth/login",
             "GET  /api/auth/verifier",
             "POST /api/auth/logout",
+
+            "== Client Auth ==",
+            "POST /api/client/auth/inscription    (public)",
+            "POST /api/client/auth/connexion      (public)",
+            "GET  /api/client/auth/verifier       (client)",
+            "POST /api/client/auth/deconnexion    (client)",
+
+            "== Client Espace ==",
+            "GET  /api/client/mon-profil          (client)",
+            "POST /api/client/modifier-profil     (client)",
+            "POST /api/client/changer-mot-de-passe (client)",
+            "GET  /api/client/mes-reservations    (client)",
+            "GET  /api/client/ma-carte-fidelite   (client)",
+            "GET  /api/client/mes-notifications   (client)",
+            "POST /api/client/notifications/lire  (client)",
+
+            "== Parrainage ==",
+            "GET  /api/parrainage/verifier-code?code=XXX (public)",
+            "GET  /api/client/parrainage/mes-stats (client)",
+            "GET  /api/parrainage/admin/liste      (admin)",
+            "POST /api/parrainage/admin/valider    (admin)",
+            "POST /api/parrainage/admin/annuler    (admin)",
+
+            "== Badges (Client) ==",
+            "GET  /api/client/badges              (client - mes badges + catalogue)",
+
+            "== Badges (Admin) ==",
+            "GET  /api/badges/admin/liste         (admin)",
+            "POST /api/badges/admin/creer         (admin)",
+            "POST /api/badges/admin/modifier      (admin)",
+            "POST /api/badges/admin/supprimer     (admin)",
 
             "== Profil Admin ==",
             "GET  /api/profil/mon-profil           (admin)",
@@ -167,7 +198,7 @@ if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
             "GET  /api/export/resume",
             "GET  /api/rapport",
 
-            "== Notifications ==",
+            "== Notifications Admin ==",
             "GET  /api/notifications",
             "GET  /api/notifications/non-lues",
             "POST /api/notifications/lire",
@@ -192,6 +223,36 @@ if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
             "GET  /api/backup/liste",
             "GET  /api/backup/telecharger",
             "POST /api/backup/supprimer",
+            "GET  /api/backup/config",
+            "POST /api/backup/config",
+            "GET  /api/backup/auto",
+
+            "== Codes Promo ==",
+            "POST /api/promotions/valider         (public)",
+            "GET  /api/promotions/actives         (public)",
+            "GET  /api/promotions/admin/liste     (admin)",
+            "GET  /api/promotions/admin/utilisations (admin)",
+            "POST /api/promotions/admin/creer     (admin)",
+            "POST /api/promotions/admin/modifier  (admin)",
+            "POST /api/promotions/admin/supprimer (admin)",
+            "POST /api/promotions/admin/toggle    (admin)",
+
+            "== Galerie ==",
+            "GET  /api/galerie/photos            (public)",
+            "GET  /api/galerie/admin/photos       (admin)",
+            "POST /api/galerie/admin/upload       (admin)",
+            "POST /api/galerie/admin/modifier     (admin)",
+            "POST /api/galerie/admin/supprimer    (admin)",
+            "POST /api/galerie/admin/toggle       (admin)",
+
+            "== Monitoring ==",
+            "GET  /api/monitoring/dashboard       (admin)",
+            "GET  /api/monitoring/alertes         (admin)",
+            "POST /api/monitoring/alertes/lire    (admin)",
+            "POST /api/monitoring/alertes/resoudre (admin)",
+            "GET  /api/monitoring/erreurs         (admin)",
+            "GET  /api/monitoring/non-lues        (admin)",
+            "POST /api/monitoring/check           (admin)",
 
             "== WebSocket ==",
             "POST /api/websocket/envoyer",
@@ -211,78 +272,70 @@ if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
             "POST /api/contact",
 
             "== Réservations ==",
-            "POST /api/reservations                (public - créer)",
-            "GET  /api/reservations                (admin - liste)",
-            "GET  /api/reservations/stats          (admin - stats)",
-            "GET  /api/reservations/detail?code=XX (public - consulter)",
+            "POST /api/reservations                (public)",
+            "GET  /api/reservations                (admin)",
+            "GET  /api/reservations/stats          (admin)",
+            "GET  /api/reservations/detail?code=XX (public)",
             "POST /api/reservations/confirmer      (admin)",
             "POST /api/reservations/annuler        (admin)",
             "POST /api/reservations/terminer       (admin)",
             "POST /api/reservations/supprimer      (admin)",
 
-            "== Fidélité (Public) ==",
-            "POST /api/fidelite/inscription        (public - créer carte)",
-            "GET  /api/fidelite/carte?code=FID-XXX (public - consulter)",
-            "GET  /api/fidelite/recompenses        (public - catalogue)",
-
-            "== Fidélité (Admin) ==",
-            "GET  /api/fidelite                    (admin - liste)",
-            "GET  /api/fidelite/stats              (admin - stats)",
+            "== Fidélité ==",
+            "POST /api/fidelite/inscription        (public)",
+            "GET  /api/fidelite/carte?code=FID-XXX (public)",
+            "GET  /api/fidelite/recompenses        (public)",
+            "GET  /api/fidelite                    (admin)",
+            "GET  /api/fidelite/stats              (admin)",
             "POST /api/fidelite/ajouter-points     (admin)",
             "POST /api/fidelite/utiliser-recompense (admin)",
             "POST /api/fidelite/toggle-actif       (admin)",
             "POST /api/fidelite/supprimer          (admin)",
             "GET  /api/fidelite/historique?carte_id=X (admin)",
 
-            "== Blog (Public) ==",
-            "GET  /api/blog/articles               (public - liste)",
-            "GET  /api/blog/article?slug=XXX       (public - détail)",
-            "GET  /api/blog/categories             (public - catégories)",
-
-            "== Blog (Admin) ==",
-            "GET  /api/blog/admin/articles         (admin - liste)",
-            "GET  /api/blog/admin/article?id=X     (admin - détail)",
-            "GET  /api/blog/admin/stats            (admin - stats)",
+            "== Blog ==",
+            "GET  /api/blog/articles               (public)",
+            "GET  /api/blog/article?slug=XXX       (public)",
+            "GET  /api/blog/categories             (public)",
+            "GET  /api/blog/admin/articles         (admin)",
+            "GET  /api/blog/admin/article?id=X     (admin)",
+            "GET  /api/blog/admin/stats            (admin)",
             "POST /api/blog/admin/creer            (admin)",
             "POST /api/blog/admin/modifier         (admin)",
             "POST /api/blog/admin/supprimer        (admin)",
 
-            "== Newsletter (Public) ==",
-            "POST /api/newsletter/inscription      (public - s'inscrire)",
-            "GET  /api/newsletter/confirmer?token=X (public - confirmer)",
-            "GET  /api/newsletter/desinscrire?email=X (public - désinscrire)",
-            "GET  /api/newsletter/stats-publiques  (public - stats)",
-
-            "== Newsletter (Admin) ==",
-            "GET  /api/newsletter/admin/abonnes    (admin - liste)",
-            "GET  /api/newsletter/admin/stats      (admin - stats)",
+            "== Newsletter ==",
+            "POST /api/newsletter/inscription      (public)",
+            "GET  /api/newsletter/confirmer?token=X (public)",
+            "GET  /api/newsletter/desinscrire?email=X (public)",
+            "GET  /api/newsletter/stats-publiques  (public)",
+            "GET  /api/newsletter/admin/abonnes    (admin)",
+            "GET  /api/newsletter/admin/stats      (admin)",
             "POST /api/newsletter/admin/supprimer  (admin)",
             "POST /api/newsletter/admin/envoyer    (admin)",
             "GET  /api/newsletter/admin/envois     (admin)",
 
-            "== Chat (Public) ==",
-            "POST /api/chat/init                   (public - init conversation)",
-            "POST /api/chat/envoyer                (public - envoyer message)",
-            "GET  /api/chat/messages?token=X&apres=Y (public - polling)",
-
-            "== Chat (Admin) ==",
-            "GET  /api/chat/admin/conversations    (admin - liste)",
-            "GET  /api/chat/admin/conversation?id=X (admin - détail)",
+            "== Chat ==",
+            "POST /api/chat/init                   (public)",
+            "POST /api/chat/envoyer                (public)",
+            "GET  /api/chat/messages?token=X&apres=Y (public)",
+            "GET  /api/chat/admin/conversations    (admin)",
+            "GET  /api/chat/admin/conversation?id=X (admin)",
             "POST /api/chat/admin/repondre         (admin)",
-            "GET  /api/chat/admin/messages?id=X&apres=Y (admin - polling)",
+            "GET  /api/chat/admin/messages?id=X&apres=Y (admin)",
             "POST /api/chat/admin/fermer           (admin)",
             "POST /api/chat/admin/rouvrir          (admin)",
             "POST /api/chat/admin/supprimer        (admin)",
-            "POST /api/chat/admin/toggle-bot       (admin - toggle bot)",
-            "GET  /api/chat/admin/non-lus          (admin - badge)",
-            "GET  /api/chat/admin/stats            (admin - stats)"
+            "POST /api/chat/admin/toggle-bot       (admin)",
+            "GET  /api/chat/admin/non-lus          (admin)",
+            "GET  /api/chat/admin/stats            (admin)"
         ]
     ]);
     return;
 }
 
 switch (true) {
-    // ===== AUTHENTIFICATION =====
+    // ===== AUTH ADMIN =====
     case $uri === '/api/auth/login' && $method === 'POST':
         require_once __DIR__ . '/../controllers/AuthController.php';
         (new AuthController())->login();
@@ -296,6 +349,115 @@ switch (true) {
     case $uri === '/api/auth/logout' && $method === 'POST':
         require_once __DIR__ . '/../controllers/AuthController.php';
         (new AuthController())->logout();
+        break;
+
+    // ===== CLIENT AUTH =====
+    case $uri === '/api/client/auth/inscription' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/ClientAuthController.php';
+        (new ClientAuthController())->inscription();
+        break;
+
+    case $uri === '/api/client/auth/connexion' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/ClientAuthController.php';
+        (new ClientAuthController())->connexion();
+        break;
+
+    case $uri === '/api/client/auth/verifier' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/ClientAuthController.php';
+        (new ClientAuthController())->verifier();
+        break;
+
+    case $uri === '/api/client/auth/deconnexion' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/ClientAuthController.php';
+        (new ClientAuthController())->deconnexion();
+        break;
+
+    // ===== CLIENT ESPACE =====
+    case $uri === '/api/client/mon-profil' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/ClientController.php';
+        (new ClientController())->monProfil();
+        break;
+
+    case $uri === '/api/client/modifier-profil' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/ClientController.php';
+        (new ClientController())->modifierProfil();
+        break;
+
+    case $uri === '/api/client/changer-mot-de-passe' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/ClientController.php';
+        (new ClientController())->changerMotDePasse();
+        break;
+
+    case $uri === '/api/client/mes-reservations' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/ClientController.php';
+        (new ClientController())->mesReservations();
+        break;
+
+    case $uri === '/api/client/ma-carte-fidelite' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/ClientController.php';
+        (new ClientController())->maCarteFidelite();
+        break;
+
+    case $uri === '/api/client/mes-notifications' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/ClientController.php';
+        (new ClientController())->mesNotifications();
+        break;
+
+    case $uri === '/api/client/notifications/lire' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/ClientController.php';
+        (new ClientController())->marquerNotificationLue();
+        break;
+
+    // ===== PARRAINAGE =====
+    case $uri === '/api/parrainage/verifier-code' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/ParrainageController.php';
+        (new ParrainageController())->verifierCode();
+        break;
+
+    case $uri === '/api/client/parrainage/mes-stats' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/ParrainageController.php';
+        (new ParrainageController())->mesStats();
+        break;
+
+    case $uri === '/api/parrainage/admin/liste' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/ParrainageController.php';
+        (new ParrainageController())->listeAdmin();
+        break;
+
+    case $uri === '/api/parrainage/admin/valider' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/ParrainageController.php';
+        (new ParrainageController())->valider();
+        break;
+
+    case $uri === '/api/parrainage/admin/annuler' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/ParrainageController.php';
+        (new ParrainageController())->annuler();
+        break;
+
+    // ===== BADGES =====
+    case $uri === '/api/client/badges' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/BadgeController.php';
+        (new BadgeController())->mesBadges();
+        break;
+
+    case $uri === '/api/badges/admin/liste' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/BadgeController.php';
+        (new BadgeController())->listeAdmin();
+        break;
+
+    case $uri === '/api/badges/admin/creer' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/BadgeController.php';
+        (new BadgeController())->creer();
+        break;
+
+    case $uri === '/api/badges/admin/modifier' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/BadgeController.php';
+        (new BadgeController())->modifier();
+        break;
+
+    case $uri === '/api/badges/admin/supprimer' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/BadgeController.php';
+        (new BadgeController())->supprimer();
         break;
 
     // ===== PROFIL ADMIN =====
@@ -697,7 +859,7 @@ switch (true) {
         (new RapportController())->journalier();
         break;
 
-    // ===== NOTIFICATIONS =====
+    // ===== NOTIFICATIONS ADMIN =====
     case $uri === '/api/notifications' && $method === 'GET':
         require_once __DIR__ . '/../controllers/NotificationController.php';
         (new NotificationController())->liste();
@@ -782,6 +944,129 @@ switch (true) {
         (new BackupController())->supprimer();
         break;
 
+    case $uri === '/api/backup/config' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/BackupController.php';
+        (new BackupController())->getConfig();
+        break;
+
+    case $uri === '/api/backup/config' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/BackupController.php';
+        (new BackupController())->saveConfig();
+        break;
+
+    case $uri === '/api/backup/auto' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/BackupController.php';
+        (new BackupController())->auto();
+        break;
+
+    // ===== PROMOTIONS =====
+    case $uri === '/api/promotions/valider' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/PromotionController.php';
+        (new PromotionController())->valider();
+        break;
+
+    case $uri === '/api/promotions/actives' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/PromotionController.php';
+        (new PromotionController())->actives();
+        break;
+
+    case $uri === '/api/promotions/admin/liste' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/PromotionController.php';
+        (new PromotionController())->listeAdmin();
+        break;
+
+    case $uri === '/api/promotions/admin/utilisations' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/PromotionController.php';
+        (new PromotionController())->utilisations();
+        break;
+
+    case $uri === '/api/promotions/admin/creer' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/PromotionController.php';
+        (new PromotionController())->creer();
+        break;
+
+    case $uri === '/api/promotions/admin/modifier' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/PromotionController.php';
+        (new PromotionController())->modifier();
+        break;
+
+    case $uri === '/api/promotions/admin/supprimer' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/PromotionController.php';
+        (new PromotionController())->supprimer();
+        break;
+
+    case $uri === '/api/promotions/admin/toggle' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/PromotionController.php';
+        (new PromotionController())->toggle();
+        break;
+
+    // ===== GALERIE =====
+    case $uri === '/api/galerie/photos' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/GalerieController.php';
+        (new GalerieController())->listePublique();
+        break;
+
+    case $uri === '/api/galerie/admin/photos' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/GalerieController.php';
+        (new GalerieController())->listeAdmin();
+        break;
+
+    case $uri === '/api/galerie/admin/upload' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/GalerieController.php';
+        (new GalerieController())->upload();
+        break;
+
+    case $uri === '/api/galerie/admin/modifier' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/GalerieController.php';
+        (new GalerieController())->modifier();
+        break;
+
+    case $uri === '/api/galerie/admin/supprimer' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/GalerieController.php';
+        (new GalerieController())->supprimer();
+        break;
+
+    case $uri === '/api/galerie/admin/toggle' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/GalerieController.php';
+        (new GalerieController())->toggle();
+        break;
+
+    // ===== MONITORING =====
+    case $uri === '/api/monitoring/dashboard' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/MonitoringController.php';
+        (new MonitoringController())->dashboard();
+        break;
+
+    case $uri === '/api/monitoring/alertes' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/MonitoringController.php';
+        (new MonitoringController())->alertes();
+        break;
+
+    case $uri === '/api/monitoring/alertes/lire' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/MonitoringController.php';
+        (new MonitoringController())->marquerLue();
+        break;
+
+    case $uri === '/api/monitoring/alertes/resoudre' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/MonitoringController.php';
+        (new MonitoringController())->resoudre();
+        break;
+
+    case $uri === '/api/monitoring/erreurs' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/MonitoringController.php';
+        (new MonitoringController())->erreurs();
+        break;
+
+    case $uri === '/api/monitoring/non-lues' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/MonitoringController.php';
+        (new MonitoringController())->nonLues();
+        break;
+
+    case $uri === '/api/monitoring/check' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/MonitoringController.php';
+        (new MonitoringController())->check();
+        break;
+
     // ===== WEBSOCKET =====
     case $uri === '/api/websocket/envoyer' && $method === 'POST':
         require_once __DIR__ . '/../controllers/WebSocketController.php';
@@ -825,7 +1110,7 @@ switch (true) {
         (new LogController())->nettoyer();
         break;
 
-    // ===== CONTACT (PUBLIC) =====
+    // ===== CONTACT =====
     case $uri === '/api/contact' && $method === 'POST':
         require_once __DIR__ . '/../controllers/ContactController.php';
         (new ContactController())->envoyer();
@@ -923,7 +1208,7 @@ switch (true) {
         (new FideliteController())->historique();
         break;
 
-    // ===== BLOG (PUBLIC) =====
+    // ===== BLOG =====
     case $uri === '/api/blog/articles' && $method === 'GET':
         require_once __DIR__ . '/../controllers/BlogController.php';
         (new BlogController())->listePublique();
@@ -939,7 +1224,6 @@ switch (true) {
         (new BlogController())->categories();
         break;
 
-    // ===== BLOG (ADMIN) =====
     case $uri === '/api/blog/admin/articles' && $method === 'GET':
         require_once __DIR__ . '/../controllers/BlogController.php';
         (new BlogController())->listeAdmin();
@@ -970,7 +1254,7 @@ switch (true) {
         (new BlogController())->supprimer();
         break;
 
-    // ===== NEWSLETTER (PUBLIC) =====
+    // ===== NEWSLETTER =====
     case $uri === '/api/newsletter/inscription' && $method === 'POST':
         require_once __DIR__ . '/../controllers/NewsletterController.php';
         (new NewsletterController())->inscription();
@@ -991,7 +1275,6 @@ switch (true) {
         (new NewsletterController())->statsPubliques();
         break;
 
-    // ===== NEWSLETTER (ADMIN) =====
     case $uri === '/api/newsletter/admin/abonnes' && $method === 'GET':
         require_once __DIR__ . '/../controllers/NewsletterController.php';
         (new NewsletterController())->listeAbonnes();
@@ -1017,7 +1300,7 @@ switch (true) {
         (new NewsletterController())->listeEnvois();
         break;
 
-    // ===== CHAT (PUBLIC) =====
+    // ===== CHAT =====
     case $uri === '/api/chat/init' && $method === 'POST':
         require_once __DIR__ . '/../controllers/ChatController.php';
         (new ChatController())->init();
@@ -1033,7 +1316,6 @@ switch (true) {
         (new ChatController())->messagesClient();
         break;
 
-    // ===== CHAT (ADMIN) =====
     case $uri === '/api/chat/admin/conversations' && $method === 'GET':
         require_once __DIR__ . '/../controllers/ChatController.php';
         (new ChatController())->listeAdmin();

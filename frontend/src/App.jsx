@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState } from "react";
 import { AuthProvider } from "./context/AuthContext";
+import { ClientAuthProvider } from "./context/ClientAuthContext";
 import { WebSocketProvider } from "./context/WebSocketContext";
 import { CaisseProvider } from "./context/CaisseContext";
 import RouteProtegee from "./components/RouteProtegee";
@@ -27,6 +28,9 @@ import Galerie from "./pages/public/Galerie";
 import Temoignages from "./pages/public/Temoignages";
 import FAQ from "./pages/public/FAQ";
 import Contact from "./pages/public/Contact";
+import ClientLogin from "./pages/public/ClientLogin";
+import ClientRegister from "./pages/public/ClientRegister";
+import ClientDashboard from "./pages/public/ClientDashboard";
 
 // ===== PAGES ADMIN =====
 import Login from "./pages/Login";
@@ -40,6 +44,10 @@ import Blog from "./pages/Blog";
 import Newsletter from "./pages/Newsletter";
 import Chat from "./pages/Chat";
 import Profil from "./pages/Profil";
+import Promotions from "./pages/Promotions";
+import GalerieAdmin from "./pages/Galerie";
+import Monitoring from "./pages/Monitoring";
+import Sauvegarde from "./pages/Sauvegarde";
 import Recettes from "./pages/Recettes";
 import Rapport from "./pages/Rapport";
 import RapportPDF from "./pages/RapportPDF";
@@ -51,7 +59,6 @@ import TwoFactorSetup from "./pages/TwoFactorSetup";
 import SessionsActives from "./pages/SessionsActives";
 import Sites from "./pages/Sites";
 import Caisses from "./pages/Caisses";
-import Sauvegarde from "./pages/Sauvegarde";
 import Diagnostic from "./pages/Diagnostic";
 import Parametres from "./pages/Parametres";
 import Aide from "./pages/Aide";
@@ -92,6 +99,10 @@ function AdminLayout() {
             <Route path="/newsletter" element={<Newsletter />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/profil" element={<Profil />} />
+            <Route path="/promotions" element={<Promotions />} />
+            <Route path="/galerie" element={<GalerieAdmin />} />
+            <Route path="/monitoring" element={<Monitoring />} />
+            <Route path="/sauvegarde" element={<Sauvegarde />} />
             <Route path="/recettes" element={<Recettes />} />
             <Route path="/rapport" element={<Rapport />} />
             <Route path="/rapport-pdf" element={<RapportPDF />} />
@@ -103,7 +114,6 @@ function AdminLayout() {
             <Route path="/sessions-actives" element={<SessionsActives />} />
             <Route path="/sites" element={<Sites />} />
             <Route path="/caisses" element={<Caisses />} />
-            <Route path="/sauvegarde" element={<Sauvegarde />} />
             <Route path="/diagnostic" element={<Diagnostic />} />
             <Route path="/parametres" element={<Parametres />} />
             <Route path="/aide" element={<Aide />} />
@@ -119,45 +129,50 @@ function AdminLayout() {
 export default function App() {
   return (
     <AuthProvider>
-      <WebSocketProvider>
-        <CaisseProvider>
-          <BrowserRouter>
-            <OfflineBanner />
-            <Routes>
-              {/* ===== ROUTES PUBLIQUES ===== */}
-              <Route element={<PublicLayout />}>
-                <Route path="/" element={<Accueil />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/tarifs" element={<Tarifs />} />
-                <Route path="/reservation" element={<Reservation />} />
-                <Route path="/fidelite" element={<FidelitePublic />} />
-                <Route path="/blog" element={<BlogPublic />} />
-                <Route path="/blog/:slug" element={<ArticlePublic />} />
-                <Route path="/newsletter" element={<NewsletterPublic />} />
-                <Route path="/galerie" element={<Galerie />} />
-                <Route path="/temoignages" element={<Temoignages />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="/contact" element={<Contact />} />
-              </Route>
+      <ClientAuthProvider>
+        <WebSocketProvider>
+          <CaisseProvider>
+            <BrowserRouter>
+              <OfflineBanner />
+              <Routes>
+                {/* ===== ROUTES PUBLIQUES ===== */}
+                <Route element={<PublicLayout />}>
+                  <Route path="/" element={<Accueil />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/tarifs" element={<Tarifs />} />
+                  <Route path="/reservation" element={<Reservation />} />
+                  <Route path="/fidelite" element={<FidelitePublic />} />
+                  <Route path="/blog" element={<BlogPublic />} />
+                  <Route path="/blog/:slug" element={<ArticlePublic />} />
+                  <Route path="/newsletter" element={<NewsletterPublic />} />
+                  <Route path="/galerie" element={<Galerie />} />
+                  <Route path="/temoignages" element={<Temoignages />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/connexion" element={<ClientLogin />} />
+                  <Route path="/inscription" element={<ClientRegister />} />
+                  <Route path="/mon-compte" element={<ClientDashboard />} />
+                </Route>
 
-              {/* ===== AUTHENTIFICATION ===== */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/portail" element={<Portail />} />
+                {/* ===== AUTHENTIFICATION ADMIN ===== */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/portail" element={<Portail />} />
 
-              {/* ===== ADMIN ===== */}
-              <Route
-                path="/admin/*"
-                element={
-                  <RouteProtegee>
-                    <AdminLayout />
-                  </RouteProtegee>
-                }
-              />
-            </Routes>
-            <ToastContainer />
-          </BrowserRouter>
-        </CaisseProvider>
-      </WebSocketProvider>
+                {/* ===== ADMIN ===== */}
+                <Route
+                  path="/admin/*"
+                  element={
+                    <RouteProtegee>
+                      <AdminLayout />
+                    </RouteProtegee>
+                  }
+                />
+              </Routes>
+              <ToastContainer />
+            </BrowserRouter>
+          </CaisseProvider>
+        </WebSocketProvider>
+      </ClientAuthProvider>
     </AuthProvider>
   );
 }
