@@ -50,7 +50,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
     echo json_encode([
         "message" => "API Cybercafé opérationnelle ✅",
-        "version" => "7.9",
+        "version" => "8.1",
         "routes" => [
             "== Auth Admin ==",
             "POST /api/auth/login",
@@ -80,13 +80,26 @@ if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
             "POST /api/parrainage/admin/annuler    (admin)",
 
             "== Badges (Client) ==",
-            "GET  /api/client/badges              (client - mes badges + catalogue)",
+            "GET  /api/client/badges              (client)",
 
             "== Badges (Admin) ==",
             "GET  /api/badges/admin/liste         (admin)",
             "POST /api/badges/admin/creer         (admin)",
             "POST /api/badges/admin/modifier      (admin)",
             "POST /api/badges/admin/supprimer     (admin)",
+
+            "== VIP ==",
+            "GET  /api/client/vip/mon-abonnement  (client)",
+            "POST /api/client/vip/souscrire       (client)",
+            "POST /api/client/vip/renouveler      (client)",
+            "GET  /api/vip/admin/liste            (admin)",
+            "POST /api/vip/admin/annuler          (admin)",
+            "POST /api/vip/admin/activer          (admin)",
+
+            "== Roue de la fortune ==",
+            "GET  /api/client/roue/etat           (client)",
+            "POST /api/client/roue/jouer          (client)",
+            "GET  /api/roue/admin/stats           (admin)",
 
             "== Profil Admin ==",
             "GET  /api/profil/mon-profil           (admin)",
@@ -458,6 +471,53 @@ switch (true) {
     case $uri === '/api/badges/admin/supprimer' && $method === 'POST':
         require_once __DIR__ . '/../controllers/BadgeController.php';
         (new BadgeController())->supprimer();
+        break;
+
+    // ===== VIP =====
+    case $uri === '/api/client/vip/mon-abonnement' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/VipController.php';
+        (new VipController())->monAbonnement();
+        break;
+
+    case $uri === '/api/client/vip/souscrire' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/VipController.php';
+        (new VipController())->souscrire();
+        break;
+
+    case $uri === '/api/client/vip/renouveler' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/VipController.php';
+        (new VipController())->renouveler();
+        break;
+
+    case $uri === '/api/vip/admin/liste' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/VipController.php';
+        (new VipController())->listeAdmin();
+        break;
+
+    case $uri === '/api/vip/admin/annuler' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/VipController.php';
+        (new VipController())->annuler();
+        break;
+
+    case $uri === '/api/vip/admin/activer' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/VipController.php';
+        (new VipController())->activerManuellement();
+        break;
+
+    // ===== ROUE DE LA FORTUNE =====
+    case $uri === '/api/client/roue/etat' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/RoueController.php';
+        (new RoueController())->etat();
+        break;
+
+    case $uri === '/api/client/roue/jouer' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/RoueController.php';
+        (new RoueController())->jouer();
+        break;
+
+    case $uri === '/api/roue/admin/stats' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/RoueController.php';
+        (new RoueController())->statsAdmin();
         break;
 
     // ===== PROFIL ADMIN =====

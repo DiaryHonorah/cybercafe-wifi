@@ -47,6 +47,7 @@ import Profil from "./pages/Profil";
 import Promotions from "./pages/Promotions";
 import GalerieAdmin from "./pages/Galerie";
 import Monitoring from "./pages/Monitoring";
+import Vip from "./pages/Vip";
 import Sauvegarde from "./pages/Sauvegarde";
 import Recettes from "./pages/Recettes";
 import Rapport from "./pages/Rapport";
@@ -102,6 +103,7 @@ function AdminLayout() {
             <Route path="/promotions" element={<Promotions />} />
             <Route path="/galerie" element={<GalerieAdmin />} />
             <Route path="/monitoring" element={<Monitoring />} />
+            <Route path="/vip" element={<Vip />} />
             <Route path="/sauvegarde" element={<Sauvegarde />} />
             <Route path="/recettes" element={<Recettes />} />
             <Route path="/rapport" element={<Rapport />} />

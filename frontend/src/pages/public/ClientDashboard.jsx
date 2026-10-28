@@ -34,6 +34,13 @@ import {
   Wallet,
   Medal,
   Target,
+  Crown,
+  Diamond,
+  Zap,
+  RefreshCw,
+  Printer,
+  Wifi,
+  Ban,
 } from "lucide-react";
 import { useClientAuth } from "../../context/ClientAuthContext";
 import { usePublicLang } from "../../context/PublicLangContext";
@@ -69,7 +76,9 @@ export default function ClientDashboard() {
   const [nonLues, setNonLues] = useState(0);
   const [parrainage, setParrainage] = useState(null);
   const [badges, setBadges] = useState(null);
+  const [vip, setVip] = useState(null);
   const [copie, setCopie] = useState(false);
+  const [modalVip, setModalVip] = useState(false);
 
   // Redirection si non connecté
   useEffect(() => {
@@ -116,6 +125,8 @@ export default function ClientDashboard() {
       chargerParrainage();
     } else if (ongletActif === "badges") {
       chargerBadges();
+    } else if (ongletActif === "vip") {
+      chargerVip();
     }
   }, [ongletActif, isAuthenticated]);
 
@@ -181,13 +192,74 @@ export default function ClientDashboard() {
       const data = await res.json();
       if (data.success) {
         setBadges(data);
-        // Recharger le profil (pour le solde bonus mis à jour)
         if (data.nouveaux_debloques && data.nouveaux_debloques.length > 0) {
           window.location.reload();
         }
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  const chargerVip = async () => {
+    setChargement(true);
+    try {
+      const res = await fetchAvecToken(`${API_URL}/client/vip/mon-abonnement`);
+      const data = await res.json();
+      if (data.success) setVip(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  const souscrireVip = async () => {
+    setChargement(true);
+    setErreur(null);
+    try {
+      const res = await fetchAvecToken(`${API_URL}/client/vip/souscrire`, {
+        method: "POST",
+        body: JSON.stringify({ auto_renouvellement: false }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setSucces(data.message);
+        setModalVip(false);
+        chargerVip();
+        setTimeout(() => setSucces(null), 5000);
+      } else {
+        setErreur(data.message);
+      }
+    } catch (err) {
+      setErreur("Erreur serveur");
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  const renouvelerVip = async () => {
+    if (!confirm("Renouveler votre abonnement VIP pour 30 jours de plus ?")) return;
+
+    setChargement(true);
+    try {
+      const res = await fetchAvecToken(`${API_URL}/client/vip/renouveler`, {
+        method: "POST",
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setSucces(data.message);
+        chargerVip();
+        setTimeout(() => setSucces(null), 5000);
+      } else {
+        setErreur(data.message);
+      }
+    } catch (err) {
+      setErreur("Erreur serveur");
     } finally {
       setChargement(false);
     }
@@ -411,6 +483,7 @@ export default function ClientDashboard() {
               { id: "fidelite", label: t("clientDash.ongletFidelite"), icon: Award },
               { id: "parrainage", label: t("clientDash.ongletParrainage"), icon: Users },
               { id: "badges", label: t("clientDash.ongletBadges"), icon: Trophy },
+              { id: "vip", label: t("clientDash.ongletVip"), icon: Crown },
               { id: "notifications", label: t("clientDash.ongletNotifications"), icon: Bell, badge: nonLues },
               { id: "securite", label: t("clientDash.ongletSecurite"), icon: Lock },
             ].map((tab) => (
@@ -601,10 +674,7 @@ export default function ClientDashboard() {
                 <div className="public-card p-12 text-center">
                   <CalendarDays size={48} className="text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-400">{t("clientDash.aucuneReservation")}</p>
-                  <Link
-                    to="/reservation"
-                    className="btn-public-cyan inline-flex mt-4"
-                  >
+                  <Link to="/reservation" className="btn-public-cyan inline-flex mt-4">
                     {t("clientDash.reserverMaintenant")}
                   </Link>
                 </div>
@@ -876,24 +946,6 @@ export default function ClientDashboard() {
                     </div>
                   </div>
 
-                  <div className="public-card p-5">
-                    <h3 className="font-semibold mb-3">{t("clientDash.commentCaMarche")}</h3>
-                    <ol className="space-y-2 text-sm text-gray-400">
-                      <li className="flex gap-3">
-                        <span className="bg-[#06B6D4] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold text-xs">1</span>
-                        <span>{t("clientDash.etape1")}</span>
-                      </li>
-                      <li className="flex gap-3">
-                        <span className="bg-[#06B6D4] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold text-xs">2</span>
-                        <span>{t("clientDash.etape2")}</span>
-                      </li>
-                      <li className="flex gap-3">
-                        <span className="bg-[#06B6D4] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 text-xs font-bold">3</span>
-                        <span>{t("clientDash.etape3")}</span>
-                      </li>
-                    </ol>
-                  </div>
-
                   {parrainage.parrainages && parrainage.parrainages.length > 0 && (
                     <div className="public-card p-5">
                       <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -952,17 +1004,21 @@ export default function ClientDashboard() {
                 <div className="text-center py-12">
                   <Loader2 size={32} className="animate-spin text-[#67E8F9] mx-auto" />
                 </div>
-              ) : !badges ? null : (
+              ) : !badges || !badges.catalogue || badges.catalogue.length === 0 ? (
+                <div className="public-card p-12 text-center">
+                  <Trophy size={48} className="text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400">
+                    {t("clientDash.aucunBadgeEncore") || "Aucun badge disponible"}
+                  </p>
+                </div>
+              ) : (
                 <div className="space-y-6">
-                  {/* Statistiques badges */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="public-card p-4 text-center">
                       <div className="inline-flex p-2 rounded-lg bg-yellow-500/20 mb-2">
                         <Trophy size={20} className="text-yellow-400" />
                       </div>
-                      <p className="text-xs text-gray-400 mb-1">
-                        {t("clientDash.badgesObtenus")}
-                      </p>
+                      <p className="text-xs text-gray-400 mb-1">Obtenus</p>
                       <p className="text-2xl font-bold text-yellow-400">
                         {badges.badges_obtenus?.length || 0}
                       </p>
@@ -971,28 +1027,22 @@ export default function ClientDashboard() {
                       <div className="inline-flex p-2 rounded-lg bg-cyan-500/20 mb-2">
                         <Medal size={20} className="text-cyan-400" />
                       </div>
-                      <p className="text-xs text-gray-400 mb-1">
-                        {t("clientDash.badgesTotal")}
-                      </p>
+                      <p className="text-xs text-gray-400 mb-1">Total</p>
                       <p className="text-2xl font-bold text-cyan-400">
-                        {badges.catalogue?.length || 0}
+                        {badges.catalogue.length}
                       </p>
                     </div>
                     <div className="public-card p-4 text-center">
                       <div className="inline-flex p-2 rounded-lg bg-green-500/20 mb-2">
                         <Target size={20} className="text-green-400" />
                       </div>
-                      <p className="text-xs text-gray-400 mb-1">
-                        {t("clientDash.badgesProgression")}
-                      </p>
+                      <p className="text-xs text-gray-400 mb-1">Progression</p>
                       <p className="text-2xl font-bold text-green-400">
-                        {badges.catalogue?.length > 0
-                          ? Math.round(
-                              ((badges.badges_obtenus?.length || 0) /
-                                badges.catalogue.length) *
-                                100
-                            )
-                          : 0}
+                        {Math.round(
+                          ((badges.badges_obtenus?.length || 0) /
+                            badges.catalogue.length) *
+                            100
+                        )}
                         %
                       </p>
                     </div>
@@ -1000,10 +1050,8 @@ export default function ClientDashboard() {
                       <div className="inline-flex p-2 rounded-lg bg-purple-500/20 mb-2">
                         <Gift size={20} className="text-purple-400" />
                       </div>
-                      <p className="text-xs text-gray-400 mb-1">
-                        {t("clientDash.bonusDebloques")}
-                      </p>
-                      <p className="text-2xl font-bold text-purple-400">
+                      <p className="text-xs text-gray-400 mb-1">Bonus</p>
+                      <p className="text-lg font-bold text-purple-400">
                         {(badges.badges_obtenus?.reduce(
                           (sum, b) => sum + parseFloat(b.recompense_bonus || 0),
                           0
@@ -1012,67 +1060,35 @@ export default function ClientDashboard() {
                     </div>
                   </div>
 
-                  {/* Barre de progression globale */}
-                  <div className="public-card p-5">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-400">
-                        {t("clientDash.progressionGlobale")}
-                      </span>
-                      <span className="text-sm font-bold text-[#67E8F9]">
-                        {badges.badges_obtenus?.length || 0} / {badges.catalogue?.length || 0}
-                      </span>
-                    </div>
-                    <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-[#06B6D4] to-[#1E40AF] rounded-full transition-all duration-1000"
-                        style={{
-                          width: `${
-                            badges.catalogue?.length > 0
-                              ? ((badges.badges_obtenus?.length || 0) /
-                                  badges.catalogue.length) *
-                                100
-                              : 0
-                          }%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Catégories */}
                   {["debut", "fidelite", "social", "special"].map((cat) => {
-                    const badgesCat = badges.catalogue?.filter(
+                    const badgesCat = badges.catalogue.filter(
                       (b) => b.categorie === cat
                     );
-                    if (!badgesCat || badgesCat.length === 0) return null;
+                    if (badgesCat.length === 0) return null;
 
                     const catInfo = getCategorieBadge(cat);
 
                     return (
                       <div key={cat}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <div
-                            className={`w-1 h-6 rounded-full bg-gradient-to-b ${catInfo.color}`}
-                          />
-                          <h3 className="font-semibold text-lg">
-                            {catInfo.label}
-                          </h3>
+                        <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                          <span className={`w-1 h-6 rounded-full bg-gradient-to-b ${catInfo.color}`} />
+                          {catInfo.label}
                           <span className="text-xs text-gray-500">
                             ({badgesCat.filter((b) => b.obtenu).length} /{" "}
                             {badgesCat.length})
                           </span>
-                        </div>
+                        </h3>
 
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                           {badgesCat.map((badge) => (
                             <div
                               key={badge.id}
-                              className={`public-card p-4 text-center relative overflow-hidden transition-all ${
+                              className={`public-card p-4 text-center relative ${
                                 badge.obtenu
                                   ? "border-2 border-yellow-500/30 shadow-lg shadow-yellow-500/10"
-                                  : "opacity-70 hover:opacity-100"
+                                  : "opacity-70"
                               }`}
                             >
-                              {/* Badge obtenu - étoile */}
                               {badge.obtenu && (
                                 <div className="absolute top-2 right-2">
                                   <Star
@@ -1083,65 +1099,46 @@ export default function ClientDashboard() {
                                 </div>
                               )}
 
-                              {/* Icône */}
                               <div
                                 className={`inline-flex p-3 rounded-2xl mb-3 ${
                                   badge.obtenu
-                                    ? `bg-gradient-to-br ${catInfo.color} shadow-lg`
+                                    ? `bg-gradient-to-br ${catInfo.color}`
                                     : "bg-white/5"
                                 }`}
                               >
                                 <span className="text-4xl">{badge.icone}</span>
                               </div>
 
-                              {/* Nom */}
-                              <h4
-                                className={`font-semibold text-sm mb-1 ${
-                                  badge.obtenu ? "text-white" : "text-gray-400"
-                                }`}
-                              >
+                              <h4 className="font-semibold text-sm mb-1">
                                 {badge.nom}
                               </h4>
-
-                              {/* Description */}
-                              <p className="text-xs text-gray-500 mb-3 line-clamp-2">
+                              <p className="text-xs text-gray-500 mb-2 line-clamp-2">
                                 {badge.description}
                               </p>
 
-                              {/* Bonus */}
                               {parseFloat(badge.recompense_bonus) > 0 && (
-                                <div
-                                  className={`text-xs font-bold mb-2 ${
-                                    badge.obtenu
-                                      ? "text-green-400"
-                                      : "text-yellow-500"
+                                <p
+                                  className={`text-xs font-bold ${
+                                    badge.obtenu ? "text-green-400" : "text-yellow-500"
                                   }`}
                                 >
                                   🎁 +{parseFloat(badge.recompense_bonus).toLocaleString("fr-FR")} Ar
-                                </div>
+                                </p>
                               )}
 
-                              {/* Progression */}
                               {!badge.obtenu && (
                                 <>
-                                  <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden mb-1">
+                                  <div className="w-full bg-white/5 rounded-full h-1.5 mt-2 overflow-hidden">
                                     <div
-                                      className="h-full bg-gradient-to-r from-[#06B6D4] to-[#1E40AF] rounded-full transition-all duration-500"
+                                      className="h-full bg-gradient-to-r from-[#06B6D4] to-[#1E40AF]"
                                       style={{ width: `${badge.progression || 0}%` }}
                                     />
                                   </div>
-                                  <p className="text-xs text-gray-500">
+                                  <p className="text-xs text-gray-500 mt-1">
                                     {badge.valeur_actuelle || 0} /{" "}
                                     {badge.condition_valeur}
                                   </p>
                                 </>
-                              )}
-
-                              {/* Date débloqué */}
-                              {badge.obtenu && badge.debloque_le && (
-                                <p className="text-xs text-gray-500 mt-2">
-                                  {formatDate(badge.debloque_le)}
-                                </p>
                               )}
                             </div>
                           ))}
@@ -1149,25 +1146,255 @@ export default function ClientDashboard() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+          )}
 
-                  {/* Message si aucun badge */}
-                  {badges.badges_obtenus?.length === 0 && (
-                    <div className="public-card p-12 text-center">
-                      <Trophy
-                        size={64}
-                        className="text-gray-600 mx-auto mb-4"
-                      />
-                      <h3 className="text-lg font-semibold mb-2">
-                        {t("clientDash.aucunBadgeEncore")}
+          {/* ===== ONGLET VIP ===== */}
+          {ongletActif === "vip" && (
+            <div className="anim-fade-up">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Crown size={20} className="text-[#F59E0B]" />
+                {t("clientDash.monVip")}
+              </h2>
+
+              {chargement ? (
+                <div className="text-center py-12">
+                  <Loader2 size={32} className="animate-spin text-[#67E8F9] mx-auto" />
+                </div>
+              ) : !vip ? null : vip.abonnement ? (
+                /* VIP ACTIF */
+                <div className="space-y-4">
+                  {/* Carte VIP */}
+                  <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br from-[#F59E0B] via-[#DC2626] to-[#7C3AED] text-white shadow-2xl">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/20 rounded-full blur-3xl" />
+
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-6">
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Crown size={28} className="text-yellow-300" />
+                            <span className="text-2xl font-black">VIP</span>
+                          </div>
+                          <p className="text-white/80 text-sm">
+                            {t("clientDash.vipMembreDepuis")} {formatDate(vip.abonnement.date_debut)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-white/70 text-xs uppercase mb-1">
+                            {t("clientDash.vipJoursRestants")}
+                          </p>
+                          <p className="text-4xl font-bold">
+                            {vip.abonnement.jours_restants}
+                          </p>
+                          <p className="text-white/70 text-xs">jours</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div className="bg-white/20 backdrop-blur rounded-xl p-3">
+                          <Wifi size={20} className="mb-1" />
+                          <p className="text-xs text-white/80 mb-1">
+                            {t("clientDash.vipWifi")}
+                          </p>
+                          <p className="font-bold">∞ Illimité</p>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur rounded-xl p-3">
+                          <Printer size={20} className="mb-1" />
+                          <p className="text-xs text-white/80 mb-1">
+                            {t("clientDash.vipImpressions")}
+                          </p>
+                          <p className="font-bold">
+                            {vip.abonnement.impressions_restantes} /{" "}
+                            {vip.abonnement.impressions_limite}
+                          </p>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur rounded-xl p-3 col-span-2 md:col-span-1">
+                          <Zap size={20} className="mb-1" />
+                          <p className="text-xs text-white/80 mb-1">
+                            {t("clientDash.vipReduction")}
+                          </p>
+                          <p className="font-bold">
+                            {vip.config.reduction_services}% sur services
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <button
+                      onClick={renouvelerVip}
+                      disabled={chargement}
+                      className="public-card p-4 hover:border-orange-500/50 transition text-left disabled:opacity-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-orange-500/20">
+                          <RefreshCw size={20} className="text-orange-400" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">
+                            {t("clientDash.vipRenouveler")}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            +30 jours pour{" "}
+                            {parseFloat(vip.config.prix_mensuel).toLocaleString("fr-FR")} Ar
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+
+                    <div className="public-card p-4 text-left">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-purple-500/20">
+                          <Calendar size={20} className="text-purple-400" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">
+                            {t("clientDash.vipExpiration")}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {formatDate(vip.abonnement.date_fin)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Statistiques d'utilisation */}
+                  <div className="public-card p-5">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <TrendingUp size={16} className="text-[#67E8F9]" />
+                      {t("clientDash.vipUtilisation")}
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex items-center justify-between mb-1 text-sm">
+                          <span className="text-gray-400">
+                            {t("clientDash.vipImpressionsUtilisees")}
+                          </span>
+                          <span className="font-bold">
+                            {vip.abonnement.impressions_utilisees} /{" "}
+                            {vip.abonnement.impressions_limite}
+                          </span>
+                        </div>
+                        <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-[#F59E0B] to-[#DC2626] rounded-full transition-all"
+                            style={{
+                              width: `${
+                                (vip.abonnement.impressions_utilisees /
+                                  vip.abonnement.impressions_limite) *
+                                100
+                              }%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1 text-sm">
+                          <span className="text-gray-400">
+                            {t("clientDash.vipWifiUtilise")}
+                          </span>
+                          <span className="font-bold">
+                            {parseFloat(vip.abonnement.wifi_utilise_heures).toFixed(1)} h
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Historique */}
+                  {vip.historique && vip.historique.length > 1 && (
+                    <div className="public-card p-5">
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <History size={16} className="text-[#67E8F9]" />
+                        {t("clientDash.vipHistorique")}
                       </h3>
-                      <p className="text-sm text-gray-400 mb-4">
-                        {t("clientDash.debloquezBadgeDesc")}
-                      </p>
-                      <Link to="/reservation" className="btn-public-cyan inline-flex">
-                        {t("clientDash.commencer")}
-                      </Link>
+                      <div className="space-y-2">
+                        {vip.historique.map((h) => (
+                          <div
+                            key={h.id}
+                            className="flex items-center justify-between py-2 border-b border-[#1E40AF]/20 last:border-0"
+                          >
+                            <div>
+                              <p className="text-sm font-medium">
+                                {formatDate(h.date_debut)} → {formatDate(h.date_fin)}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {h.statut}
+                              </p>
+                            </div>
+                            <span className="text-sm font-bold text-[#67E8F9]">
+                              {parseFloat(h.montant_paye).toLocaleString("fr-FR")} Ar
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
+                </div>
+              ) : (
+                /* PAS DE VIP - PROPOSITION */
+                <div className="space-y-4">
+                  <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 bg-gradient-to-br from-[#F59E0B] via-[#DC2626] to-[#7C3AED] text-white shadow-2xl text-center">
+                    <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+                    <div className="absolute bottom-0 right-0 w-64 h-64 bg-black/20 rounded-full blur-3xl" />
+
+                    <div className="relative">
+                      <div className="inline-flex p-4 rounded-full bg-white/20 backdrop-blur mb-4">
+                        <Crown size={48} className="text-yellow-300" />
+                      </div>
+                      <h3 className="text-2xl md:text-3xl font-bold mb-2">
+                        {t("clientDash.vipDevenir")}
+                      </h3>
+                      <p className="text-white/90 mb-6">
+                        {t("clientDash.vipDesc")}
+                      </p>
+
+                      <div className="inline-flex items-baseline gap-2 mb-6">
+                        <span className="text-5xl font-black">
+                          {parseFloat(vip.config.prix_mensuel).toLocaleString("fr-FR")}
+                        </span>
+                        <span className="text-lg">Ar / mois</span>
+                      </div>
+
+                      <div className="max-w-md mx-auto text-left space-y-2 mb-8">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 size={20} className="text-yellow-300 flex-shrink-0" />
+                          <span>{t("clientDash.vipAvantage1")}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 size={20} className="text-yellow-300 flex-shrink-0" />
+                          <span>{vip.config.impressions_limite} impressions gratuites/mois</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 size={20} className="text-yellow-300 flex-shrink-0" />
+                          <span>-{vip.config.reduction_services}% sur tous les services</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 size={20} className="text-yellow-300 flex-shrink-0" />
+                          <span>{t("clientDash.vipAvantage4")}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => setModalVip(true)}
+                        className="bg-white text-[#7C3AED] font-bold px-8 py-4 rounded-xl hover:bg-gray-100 transition text-lg shadow-lg inline-flex items-center gap-2"
+                      >
+                        <Diamond size={22} />
+                        {t("clientDash.vipSouscrire")}
+                      </button>
+
+                      <p className="text-sm text-white/70 mt-4">
+                        {t("clientDash.vipSoldeActuel")} :{" "}
+                        {parseFloat(vip.solde_bonus || 0).toLocaleString("fr-FR")} Ar
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -1224,7 +1451,6 @@ export default function ClientDashboard() {
                               marquerNotificationLue(notif.id);
                             }}
                             className="p-1.5 rounded bg-[#06B6D4]/10 hover:bg-[#06B6D4]/20 text-[#67E8F9] transition"
-                            title="Marquer comme lu"
                           >
                             <Check size={14} />
                           </button>
@@ -1302,6 +1528,93 @@ export default function ClientDashboard() {
           )}
         </div>
       </section>
+
+      {/* ===== MODAL SOUSCRIPTION VIP ===== */}
+      {modalVip && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setModalVip(false)}
+        >
+          <div
+            className="bg-[#112240] rounded-2xl max-w-md w-full border border-orange-500/30 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b border-white/10 flex items-center gap-3 bg-gradient-to-r from-[#F59E0B]/10 to-[#DC2626]/10">
+              <div className="p-2 rounded-lg bg-orange-500/20">
+                <Crown size={20} className="text-orange-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">Devenir VIP</h2>
+                <p className="text-xs text-gray-400">
+                  Abonnement 30 jours
+                </p>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="bg-[#0A1628] rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-400">Prix</span>
+                  <span className="font-bold text-lg">
+                    {parseFloat(vip?.config?.prix_mensuel || 0).toLocaleString("fr-FR")} Ar
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-400">Votre solde</span>
+                  <span className="font-bold text-green-400">
+                    {parseFloat(vip?.solde_bonus || 0).toLocaleString("fr-FR")} Ar
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-[#1E40AF]/20">
+                  <span className="text-sm text-gray-400">Après souscription</span>
+                  <span className={`font-bold ${
+                    parseFloat(vip?.solde_bonus || 0) >= parseFloat(vip?.config?.prix_mensuel || 0)
+                      ? "text-cyan-400"
+                      : "text-red-400"
+                  }`}>
+                    {(parseFloat(vip?.solde_bonus || 0) - parseFloat(vip?.config?.prix_mensuel || 0)).toLocaleString("fr-FR")} Ar
+                  </span>
+                </div>
+              </div>
+
+              {parseFloat(vip?.solde_bonus || 0) < parseFloat(vip?.config?.prix_mensuel || 0) && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg p-3 flex items-start gap-2">
+                  <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+                  <p>
+                    Solde insuffisant. Il vous manque{" "}
+                    {(parseFloat(vip?.config?.prix_mensuel || 0) - parseFloat(vip?.solde_bonus || 0)).toLocaleString("fr-FR")} Ar.
+                    Gagnez du bonus avec le parrainage et les badges !
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-5 border-t border-white/10 flex gap-3">
+              <button
+                onClick={() => setModalVip(false)}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition font-medium"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={souscrireVip}
+                disabled={
+                  chargement ||
+                  parseFloat(vip?.solde_bonus || 0) < parseFloat(vip?.config?.prix_mensuel || 0)
+                }
+                className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#F59E0B] to-[#DC2626] hover:opacity-90 text-white font-medium transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {chargement ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Diamond size={16} />
+                )}
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
