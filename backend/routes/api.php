@@ -50,7 +50,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
     echo json_encode([
         "message" => "API Cybercafé opérationnelle ✅",
-        "version" => "8.1",
+        "version" => "8.4",
         "routes" => [
             "== Auth Admin ==",
             "POST /api/auth/login",
@@ -79,10 +79,8 @@ if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
             "POST /api/parrainage/admin/valider    (admin)",
             "POST /api/parrainage/admin/annuler    (admin)",
 
-            "== Badges (Client) ==",
+            "== Badges ==",
             "GET  /api/client/badges              (client)",
-
-            "== Badges (Admin) ==",
             "GET  /api/badges/admin/liste         (admin)",
             "POST /api/badges/admin/creer         (admin)",
             "POST /api/badges/admin/modifier      (admin)",
@@ -100,6 +98,35 @@ if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
             "GET  /api/client/roue/etat           (client)",
             "POST /api/client/roue/jouer          (client)",
             "GET  /api/roue/admin/stats           (admin)",
+
+            "== Transactions bonus ==",
+            "GET  /api/client/transactions         (client)",
+            "GET  /api/client/transactions/export  (client - CSV)",
+            "GET  /api/transactions/admin/liste    (admin)",
+            "POST /api/transactions/admin/ajuster  (admin)",
+
+            "== Portefeuille ==",
+            "GET  /api/client/portefeuille         (client)",
+            "POST /api/client/portefeuille/demander (client)",
+            "GET  /api/client/portefeuille/demandes (client)",
+            "GET  /api/client/portefeuille/transactions (client)",
+            "GET  /api/portefeuille/admin/stats    (admin)",
+            "GET  /api/portefeuille/admin/demandes (admin)",
+            "POST /api/portefeuille/admin/valider  (admin)",
+            "POST /api/portefeuille/admin/rejeter  (admin)",
+            "GET  /api/portefeuille/admin/liste    (admin)",
+
+            "== Avis clients ==",
+            "GET  /api/avis                        (public)",
+            "GET  /api/avis/config                 (public)",
+            "POST /api/avis                        (public)",
+            "POST /api/avis/utile                  (public)",
+            "GET  /api/client/avis/mes-avis        (client)",
+            "GET  /api/avis/admin/liste            (admin)",
+            "POST /api/avis/admin/valider          (admin)",
+            "POST /api/avis/admin/rejeter          (admin)",
+            "POST /api/avis/admin/repondre         (admin)",
+            "POST /api/avis/admin/supprimer        (admin)",
 
             "== Profil Admin ==",
             "GET  /api/profil/mon-profil           (admin)",
@@ -504,7 +531,7 @@ switch (true) {
         (new VipController())->activerManuellement();
         break;
 
-    // ===== ROUE DE LA FORTUNE =====
+    // ===== ROUE =====
     case $uri === '/api/client/roue/etat' && $method === 'GET':
         require_once __DIR__ . '/../controllers/RoueController.php';
         (new RoueController())->etat();
@@ -518,6 +545,124 @@ switch (true) {
     case $uri === '/api/roue/admin/stats' && $method === 'GET':
         require_once __DIR__ . '/../controllers/RoueController.php';
         (new RoueController())->statsAdmin();
+        break;
+
+    // ===== TRANSACTIONS BONUS =====
+    case $uri === '/api/client/transactions' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/TransactionController.php';
+        (new TransactionController())->mesTransactions();
+        break;
+
+    case $uri === '/api/client/transactions/export' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/TransactionController.php';
+        (new TransactionController())->exportCSV();
+        break;
+
+    case $uri === '/api/transactions/admin/liste' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/TransactionController.php';
+        (new TransactionController())->listeAdmin();
+        break;
+
+    case $uri === '/api/transactions/admin/ajuster' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/TransactionController.php';
+        (new TransactionController())->ajuster();
+        break;
+
+    // ===== PORTEFEUILLE =====
+    case $uri === '/api/client/portefeuille' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/PortefeuilleController.php';
+        (new PortefeuilleController())->monPortefeuille();
+        break;
+
+    case $uri === '/api/client/portefeuille/demander' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/PortefeuilleController.php';
+        (new PortefeuilleController())->demanderRechargement();
+        break;
+
+    case $uri === '/api/client/portefeuille/demandes' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/PortefeuilleController.php';
+        (new PortefeuilleController())->mesDemandes();
+        break;
+
+    case $uri === '/api/client/portefeuille/transactions' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/PortefeuilleController.php';
+        (new PortefeuilleController())->mesTransactions();
+        break;
+
+    case $uri === '/api/portefeuille/admin/stats' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/PortefeuilleController.php';
+        (new PortefeuilleController())->adminStats();
+        break;
+
+    case $uri === '/api/portefeuille/admin/demandes' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/PortefeuilleController.php';
+        (new PortefeuilleController())->adminDemandes();
+        break;
+
+    case $uri === '/api/portefeuille/admin/valider' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/PortefeuilleController.php';
+        (new PortefeuilleController())->adminValider();
+        break;
+
+    case $uri === '/api/portefeuille/admin/rejeter' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/PortefeuilleController.php';
+        (new PortefeuilleController())->adminRejeter();
+        break;
+
+    case $uri === '/api/portefeuille/admin/liste' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/PortefeuilleController.php';
+        (new PortefeuilleController())->adminListePortefeuilles();
+        break;
+
+    // ===== AVIS =====
+    case $uri === '/api/avis' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/AvisController.php';
+        (new AvisController())->listePublique();
+        break;
+
+    case $uri === '/api/avis' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/AvisController.php';
+        (new AvisController())->creer();
+        break;
+
+    case $uri === '/api/avis/config' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/AvisController.php';
+        (new AvisController())->getConfig();
+        break;
+
+    case $uri === '/api/avis/utile' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/AvisController.php';
+        (new AvisController())->marquerUtile();
+        break;
+
+    case $uri === '/api/client/avis/mes-avis' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/AvisController.php';
+        (new AvisController())->mesAvis();
+        break;
+
+    case $uri === '/api/avis/admin/liste' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/AvisController.php';
+        (new AvisController())->listeAdmin();
+        break;
+
+    case $uri === '/api/avis/admin/valider' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/AvisController.php';
+        (new AvisController())->valider();
+        break;
+
+    case $uri === '/api/avis/admin/rejeter' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/AvisController.php';
+        (new AvisController())->rejeter();
+        break;
+
+    case $uri === '/api/avis/admin/repondre' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/AvisController.php';
+        (new AvisController())->repondre();
+        break;
+
+    case $uri === '/api/avis/admin/supprimer' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/AvisController.php';
+        (new AvisController())->supprimer();
         break;
 
     // ===== PROFIL ADMIN =====

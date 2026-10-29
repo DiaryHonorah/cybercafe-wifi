@@ -1,47 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  User,
-  Mail,
-  Phone,
-  Calendar,
-  MapPin,
-  LogOut,
-  Edit,
-  Save,
-  X,
-  Loader2,
-  AlertCircle,
-  CheckCircle2,
-  Award,
-  Star,
-  Gift,
-  Clock,
-  TrendingUp,
-  Bell,
-  Eye,
-  Check,
-  CalendarDays,
-  CreditCard,
-  Home,
-  History,
-  Lock,
-  Users,
-  Share2,
-  Copy,
-  Trophy,
-  Sparkles,
-  Wallet,
-  Medal,
-  Target,
-  Crown,
-  Diamond,
-  Zap,
-  RefreshCw,
-  Printer,
-  Wifi,
-  Ban,
-  Dices,
+  User, Mail, Phone, Calendar, MapPin, LogOut, Edit, Save, X, Loader2,
+  AlertCircle, CheckCircle2, Award, Star, Gift, Clock, TrendingUp, Bell,
+  Eye, Check, CalendarDays, CreditCard, Home, History, Lock, Users, Share2,
+  Copy, Trophy, Sparkles, Wallet, Medal, Target, Crown, Diamond, Zap,
+  RefreshCw, Printer, Wifi, Ban, Dices, ArrowUpRight, ArrowDownLeft,
+  Download, Filter, Receipt, Search, Wallet as WalletIcon, Banknote,
+  Plus, Building2, Smartphone, FileText, Send, XCircle, ChevronRight,
 } from "lucide-react";
 import { useClientAuth } from "../../context/ClientAuthContext";
 import { usePublicLang } from "../../context/PublicLangContext";
@@ -58,19 +24,9 @@ export default function ClientDashboard() {
   const [erreur, setErreur] = useState(null);
   const [succes, setSucces] = useState(null);
 
-  const [profil, setProfil] = useState({
-    nom: "",
-    telephone: "",
-    date_naissance: "",
-    adresse: "",
-  });
+  const [profil, setProfil] = useState({ nom: "", telephone: "", date_naissance: "", adresse: "" });
   const [modeEdition, setModeEdition] = useState(false);
-
-  const [motDePasse, setMotDePasse] = useState({
-    ancien: "",
-    nouveau: "",
-    confirmer: "",
-  });
+  const [motDePasse, setMotDePasse] = useState({ ancien: "", nouveau: "", confirmer: "" });
 
   const [reservations, setReservations] = useState([]);
   const [carteFidelite, setCarteFidelite] = useState(null);
@@ -82,14 +38,25 @@ export default function ClientDashboard() {
   const [copie, setCopie] = useState(false);
   const [modalVip, setModalVip] = useState(false);
 
-  // Redirection si non connecté
+  const [transactions, setTransactions] = useState([]);
+  const [transactionsStats, setTransactionsStats] = useState(null);
+  const [filtreType, setFiltreType] = useState("tous");
+  const [filtreSens, setFiltreSens] = useState("tous");
+  const [rechercheTx, setRechercheTx] = useState("");
+
+  // Portefeuille
+  const [portefeuille, setPortefeuille] = useState(null);
+  const [modalRecharger, setModalRecharger] = useState(false);
+  const [formRecharge, setFormRecharge] = useState({
+    montant: "",
+    methode: "mvola",
+    reference_paiement: "",
+  });
+
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      navigate("/connexion");
-    }
+    if (!loading && !isAuthenticated) navigate("/connexion");
   }, [loading, isAuthenticated, navigate]);
 
-  // Charger le profil
   useEffect(() => {
     if (client) {
       setProfil({
@@ -113,25 +80,21 @@ export default function ClientDashboard() {
     return fetch(url, { ...options, headers, credentials: "omit" });
   };
 
-  // Charger les données selon l'onglet
   useEffect(() => {
     if (!isAuthenticated) return;
-
-    if (ongletActif === "reservations") {
-      chargerReservations();
-    } else if (ongletActif === "fidelite") {
-      chargerFidelite();
-    } else if (ongletActif === "notifications") {
-      chargerNotifications();
-    } else if (ongletActif === "parrainage") {
-      chargerParrainage();
-    } else if (ongletActif === "badges") {
-      chargerBadges();
-    } else if (ongletActif === "vip") {
-      chargerVip();
-    }
-    // 🎡 L'onglet "roue" gère son propre chargement dans RoueFortune
+    if (ongletActif === "reservations") chargerReservations();
+    else if (ongletActif === "fidelite") chargerFidelite();
+    else if (ongletActif === "notifications") chargerNotifications();
+    else if (ongletActif === "parrainage") chargerParrainage();
+    else if (ongletActif === "badges") chargerBadges();
+    else if (ongletActif === "vip") chargerVip();
+    else if (ongletActif === "transactions") chargerTransactions();
+    else if (ongletActif === "portefeuille") chargerPortefeuille();
   }, [ongletActif, isAuthenticated]);
+
+  useEffect(() => {
+    if (ongletActif === "transactions" && isAuthenticated) chargerTransactions();
+  }, [filtreType, filtreSens]);
 
   const chargerReservations = async () => {
     setChargement(true);
@@ -139,11 +102,7 @@ export default function ClientDashboard() {
       const res = await fetchAvecToken(`${API_URL}/client/mes-reservations`);
       const data = await res.json();
       if (data.success) setReservations(data.reservations || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setChargement(false);
-    }
+    } catch (err) { console.error(err); } finally { setChargement(false); }
   };
 
   const chargerFidelite = async () => {
@@ -152,11 +111,7 @@ export default function ClientDashboard() {
       const res = await fetchAvecToken(`${API_URL}/client/ma-carte-fidelite`);
       const data = await res.json();
       if (data.success) setCarteFidelite(data.carte);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setChargement(false);
-    }
+    } catch (err) { console.error(err); } finally { setChargement(false); }
   };
 
   const chargerNotifications = async () => {
@@ -168,11 +123,7 @@ export default function ClientDashboard() {
         setNotifications(data.notifications || []);
         setNonLues(data.non_lues || 0);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setChargement(false);
-    }
+    } catch (err) { console.error(err); } finally { setChargement(false); }
   };
 
   const chargerParrainage = async () => {
@@ -181,11 +132,7 @@ export default function ClientDashboard() {
       const res = await fetchAvecToken(`${API_URL}/client/parrainage/mes-stats`);
       const data = await res.json();
       if (data.success) setParrainage(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setChargement(false);
-    }
+    } catch (err) { console.error(err); } finally { setChargement(false); }
   };
 
   const chargerBadges = async () => {
@@ -199,11 +146,7 @@ export default function ClientDashboard() {
           window.location.reload();
         }
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setChargement(false);
-    }
+    } catch (err) { console.error(err); } finally { setChargement(false); }
   };
 
   const chargerVip = async () => {
@@ -212,10 +155,89 @@ export default function ClientDashboard() {
       const res = await fetchAvecToken(`${API_URL}/client/vip/mon-abonnement`);
       const data = await res.json();
       if (data.success) setVip(data);
+    } catch (err) { console.error(err); } finally { setChargement(false); }
+  };
+
+  const chargerTransactions = async () => {
+    setChargement(true);
+    try {
+      const params = new URLSearchParams();
+      if (filtreType !== "tous") params.append("type", filtreType);
+      if (filtreSens !== "tous") params.append("sens", filtreSens);
+      params.append("limite", "200");
+
+      const res = await fetchAvecToken(`${API_URL}/client/transactions?${params.toString()}`);
+      const data = await res.json();
+      if (data.success) {
+        setTransactions(data.transactions || []);
+        setTransactionsStats(data.stats);
+      }
+    } catch (err) { console.error(err); } finally { setChargement(false); }
+  };
+
+  const chargerPortefeuille = async () => {
+    setChargement(true);
+    try {
+      const res = await fetchAvecToken(`${API_URL}/client/portefeuille`);
+      const data = await res.json();
+      if (data.success) setPortefeuille(data);
+    } catch (err) { console.error(err); } finally { setChargement(false); }
+  };
+
+  const demanderRechargement = async () => {
+    setErreur(null);
+    const montant = parseFloat(formRecharge.montant);
+
+    if (!montant || montant <= 0) {
+      setErreur("Montant invalide");
+      return;
+    }
+
+    setChargement(true);
+    try {
+      const res = await fetchAvecToken(`${API_URL}/client/portefeuille/demander`, {
+        method: "POST",
+        body: JSON.stringify({
+          montant,
+          methode: formRecharge.methode,
+          reference_paiement: formRecharge.reference_paiement,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setSucces(data.message);
+        setModalRecharger(false);
+        setFormRecharge({ montant: "", methode: "mvola", reference_paiement: "" });
+        chargerPortefeuille();
+        setTimeout(() => setSucces(null), 5000);
+      } else {
+        setErreur(data.message);
+      }
     } catch (err) {
-      console.error(err);
+      setErreur("Erreur serveur");
     } finally {
       setChargement(false);
+    }
+  };
+
+  const telechargerCSV = async () => {
+    try {
+      const res = await fetch(`${API_URL}/client/transactions/export`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) throw new Error("Erreur téléchargement");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `transactions_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setErreur("Erreur lors du téléchargement");
     }
   };
 
@@ -228,44 +250,27 @@ export default function ClientDashboard() {
         body: JSON.stringify({ auto_renouvellement: false }),
       });
       const data = await res.json();
-
       if (data.success) {
         setSucces(data.message);
         setModalVip(false);
         chargerVip();
         setTimeout(() => setSucces(null), 5000);
-      } else {
-        setErreur(data.message);
-      }
-    } catch (err) {
-      setErreur("Erreur serveur");
-    } finally {
-      setChargement(false);
-    }
+      } else setErreur(data.message);
+    } catch (err) { setErreur("Erreur serveur"); } finally { setChargement(false); }
   };
 
   const renouvelerVip = async () => {
     if (!confirm("Renouveler votre abonnement VIP pour 30 jours de plus ?")) return;
-
     setChargement(true);
     try {
-      const res = await fetchAvecToken(`${API_URL}/client/vip/renouveler`, {
-        method: "POST",
-      });
+      const res = await fetchAvecToken(`${API_URL}/client/vip/renouveler`, { method: "POST" });
       const data = await res.json();
-
       if (data.success) {
         setSucces(data.message);
         chargerVip();
         setTimeout(() => setSucces(null), 5000);
-      } else {
-        setErreur(data.message);
-      }
-    } catch (err) {
-      setErreur("Erreur serveur");
-    } finally {
-      setChargement(false);
-    }
+      } else setErreur(data.message);
+    } catch (err) { setErreur("Erreur serveur"); } finally { setChargement(false); }
   };
 
   const sauvegarderProfil = async () => {
@@ -277,64 +282,41 @@ export default function ClientDashboard() {
         body: JSON.stringify(profil),
       });
       const data = await res.json();
-
       if (data.success) {
         setSucces(t("clientDash.profilMisAJour"));
         setModeEdition(false);
         localStorage.setItem("client_data", JSON.stringify(data.client));
-        setTimeout(() => {
-          setSucces(null);
-          window.location.reload();
-        }, 1000);
-      } else {
-        setErreur(data.message);
-      }
-    } catch (err) {
-      setErreur("Erreur serveur");
-    } finally {
-      setChargement(false);
-    }
+        setTimeout(() => { setSucces(null); window.location.reload(); }, 1000);
+      } else setErreur(data.message);
+    } catch (err) { setErreur("Erreur serveur"); } finally { setChargement(false); }
   };
 
   const changerMotDePasse = async () => {
     setErreur(null);
-
     if (motDePasse.nouveau !== motDePasse.confirmer) {
       setErreur("Les mots de passe ne correspondent pas");
       return;
     }
-
     if (motDePasse.nouveau.length < 8) {
       setErreur("Le mot de passe doit faire 8 caractères min");
       return;
     }
-
     setChargement(true);
     try {
-      const res = await fetchAvecToken(
-        `${API_URL}/client/changer-mot-de-passe`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            ancien_mot_de_passe: motDePasse.ancien,
-            nouveau_mot_de_passe: motDePasse.nouveau,
-          }),
-        }
-      );
+      const res = await fetchAvecToken(`${API_URL}/client/changer-mot-de-passe`, {
+        method: "POST",
+        body: JSON.stringify({
+          ancien_mot_de_passe: motDePasse.ancien,
+          nouveau_mot_de_passe: motDePasse.nouveau,
+        }),
+      });
       const data = await res.json();
-
       if (data.success) {
         setSucces("Mot de passe modifié");
         setMotDePasse({ ancien: "", nouveau: "", confirmer: "" });
         setTimeout(() => setSucces(null), 3000);
-      } else {
-        setErreur(data.message);
-      }
-    } catch (err) {
-      setErreur("Erreur serveur");
-    } finally {
-      setChargement(false);
-    }
+      } else setErreur(data.message);
+    } catch (err) { setErreur("Erreur serveur"); } finally { setChargement(false); }
   };
 
   const marquerNotificationLue = async (id) => {
@@ -354,36 +336,28 @@ export default function ClientDashboard() {
 
   const copierLienParrainage = async () => {
     if (!parrainage?.stats?.code_parrainage) return;
-
     const lien = `http://localhost:5173/inscription?code=${parrainage.stats.code_parrainage}`;
     try {
       await navigator.clipboard.writeText(lien);
       setCopie(true);
       setTimeout(() => setCopie(false), 3000);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    return new Date(dateStr).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
   };
 
   const formatDateHeure = (dateStr) => {
     if (!dateStr) return "-";
     return new Date(dateStr).toLocaleString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
     });
   };
+
+  const formatPrix = (n) => Number(n || 0).toLocaleString("fr-FR");
 
   const getNiveauInfo = (niveau) => {
     const niveaux = {
@@ -405,6 +379,70 @@ export default function ClientDashboard() {
     return cats[cat] || cats.debut;
   };
 
+  const getTypeIcon = (type) => {
+    const icons = {
+      parrainage_parrain: "🤝", parrainage_filleul: "🎁", badge: "🏆",
+      roue: "🎡", vip_souscription: "💎", vip_renouvellement: "🔄",
+      achat: "🛒", remboursement: "↩️", bonus_manuel: "⚙️",
+      inscription: "🎉", autre: "💰",
+    };
+    return icons[type] || "💰";
+  };
+
+  const getTypeColor = (type) => {
+    const colors = {
+      parrainage_parrain: "bg-purple-500/10 text-purple-400 border-purple-500/30",
+      parrainage_filleul: "bg-pink-500/10 text-pink-400 border-pink-500/30",
+      badge: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
+      roue: "bg-cyan-500/10 text-cyan-400 border-cyan-500/30",
+      vip_souscription: "bg-orange-500/10 text-orange-400 border-orange-500/30",
+      vip_renouvellement: "bg-orange-500/10 text-orange-400 border-orange-500/30",
+      achat: "bg-blue-500/10 text-blue-400 border-blue-500/30",
+      remboursement: "bg-green-500/10 text-green-400 border-green-500/30",
+      bonus_manuel: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
+      inscription: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+      autre: "bg-gray-500/10 text-gray-400 border-gray-500/30",
+    };
+    return colors[type] || colors.autre;
+  };
+
+  const getMethodeLabel = (methode) => {
+    const labels = {
+      mvola: "MVola", orange_money: "Orange Money", airtel_money: "Airtel Money",
+      virement: "Virement bancaire", especes: "Espèces", autre: "Autre",
+    };
+    return labels[methode] || methode;
+  };
+
+  const getMethodeIcon = (methode) => {
+    const icons = {
+      mvola: <Smartphone size={18} />, orange_money: <Smartphone size={18} />,
+      airtel_money: <Smartphone size={18} />, virement: <Building2 size={18} />,
+      especes: <Banknote size={18} />, autre: <CreditCard size={18} />,
+    };
+    return icons[methode] || <CreditCard size={18} />;
+  };
+
+  const getStatutDemandeColor = (statut) => {
+    const colors = {
+      en_attente: "bg-orange-500/10 text-orange-400 border-orange-500/30",
+      validee: "bg-green-500/10 text-green-400 border-green-500/30",
+      rejetee: "bg-red-500/10 text-red-400 border-red-500/30",
+    };
+    return colors[statut] || "bg-gray-500/10 text-gray-400 border-gray-500/30";
+  };
+
+  const getStatutDemandeLabel = (statut) => {
+    const labels = { en_attente: "En attente", validee: "Validée", rejetee: "Rejetée" };
+    return labels[statut] || statut;
+  };
+
+  const transactionsFiltrees = transactions.filter((tx) => {
+    if (!rechercheTx) return true;
+    const search = rechercheTx.toLowerCase();
+    return tx.description?.toLowerCase().includes(search) || tx.type_label?.toLowerCase().includes(search);
+  });
+
   if (loading) {
     return (
       <div className="public-page min-h-screen flex items-center justify-center">
@@ -415,12 +453,7 @@ export default function ClientDashboard() {
 
   if (!client) return null;
 
-  const initiales = (client.nom || "C")
-    .split(" ")
-    .map((m) => m[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const initiales = (client.nom || "C").split(" ").map((m) => m[0]).join("").toUpperCase().slice(0, 2);
 
   return (
     <div className="public-page">
@@ -441,11 +474,18 @@ export default function ClientDashboard() {
                   {t("clientDash.bonjour")}, {client.nom}
                 </h1>
                 <p className="text-gray-400 text-sm mt-1">{client.email}</p>
-                {client.solde_bonus > 0 && (
-                  <p className="text-sm text-green-400 font-medium mt-1">
-                    💰 {t("clientDash.soldeBonus")} : {parseFloat(client.solde_bonus).toLocaleString("fr-FR")} Ar
-                  </p>
-                )}
+                <div className="flex flex-wrap gap-3 mt-2">
+                  {client.solde_bonus > 0 && (
+                    <p className="text-sm text-green-400 font-medium">
+                      🎁 {t("clientDash.soldeBonus")} : {formatPrix(client.solde_bonus)} Ar
+                    </p>
+                  )}
+                  {portefeuille?.stats?.solde > 0 && (
+                    <p className="text-sm text-cyan-400 font-medium">
+                      💳 {t("clientDash.soldePortefeuille")} : {formatPrix(portefeuille.stats.solde)} Ar
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -460,7 +500,6 @@ export default function ClientDashboard() {
         </div>
       </section>
 
-      {/* MESSAGES */}
       <div className="public-container mt-6">
         {succes && (
           <div className="mb-4 bg-green-500/10 border border-green-500/30 text-green-400 text-sm rounded-lg p-4 flex items-center gap-3">
@@ -483,11 +522,13 @@ export default function ClientDashboard() {
             {[
               { id: "profil", label: t("clientDash.ongletProfil"), icon: User },
               { id: "reservations", label: t("clientDash.ongletReservations"), icon: CalendarDays },
+              { id: "portefeuille", label: t("clientDash.ongletPortefeuille"), icon: WalletIcon },
               { id: "fidelite", label: t("clientDash.ongletFidelite"), icon: Award },
               { id: "parrainage", label: t("clientDash.ongletParrainage"), icon: Users },
               { id: "badges", label: t("clientDash.ongletBadges"), icon: Trophy },
               { id: "roue", label: t("clientDash.ongletRoue"), icon: Dices },
               { id: "vip", label: t("clientDash.ongletVip"), icon: Crown },
+              { id: "transactions", label: t("clientDash.ongletTransactions"), icon: Receipt },
               { id: "notifications", label: t("clientDash.ongletNotifications"), icon: Bell, badge: nonLues },
               { id: "securite", label: t("clientDash.ongletSecurite"), icon: Lock },
             ].map((tab) => (
@@ -533,79 +574,49 @@ export default function ClientDashboard() {
               {modeEdition ? (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">
-                      {t("clientDash.nom")}
-                    </label>
+                    <label className="block text-sm text-gray-400 mb-2">{t("clientDash.nom")}</label>
                     <input
                       type="text"
                       value={profil.nom}
-                      onChange={(e) =>
-                        setProfil({ ...profil, nom: e.target.value })
-                      }
+                      onChange={(e) => setProfil({ ...profil, nom: e.target.value })}
                       className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">
-                      {t("clientDash.telephone")}
-                    </label>
+                    <label className="block text-sm text-gray-400 mb-2">{t("clientDash.telephone")}</label>
                     <input
                       type="tel"
                       value={profil.telephone}
-                      onChange={(e) =>
-                        setProfil({ ...profil, telephone: e.target.value })
-                      }
+                      onChange={(e) => setProfil({ ...profil, telephone: e.target.value })}
                       className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none"
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm text-gray-400 mb-2">
-                        {t("clientDash.dateNaissance")}
-                      </label>
+                      <label className="block text-sm text-gray-400 mb-2">{t("clientDash.dateNaissance")}</label>
                       <input
                         type="date"
                         value={profil.date_naissance}
-                        onChange={(e) =>
-                          setProfil({
-                            ...profil,
-                            date_naissance: e.target.value,
-                          })
-                        }
+                        onChange={(e) => setProfil({ ...profil, date_naissance: e.target.value })}
                         className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-400 mb-2">
-                        {t("clientDash.adresse")}
-                      </label>
+                      <label className="block text-sm text-gray-400 mb-2">{t("clientDash.adresse")}</label>
                       <input
                         type="text"
                         value={profil.adresse}
-                        onChange={(e) =>
-                          setProfil({ ...profil, adresse: e.target.value })
-                        }
+                        onChange={(e) => setProfil({ ...profil, adresse: e.target.value })}
                         className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none"
                       />
                     </div>
                   </div>
                   <div className="flex gap-2 pt-4">
-                    <button
-                      onClick={sauvegarderProfil}
-                      disabled={chargement}
-                      className="btn-public-cyan disabled:opacity-50"
-                    >
-                      {chargement ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <Save size={16} />
-                      )}
+                    <button onClick={sauvegarderProfil} disabled={chargement} className="btn-public-cyan disabled:opacity-50">
+                      {chargement ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                       {t("clientDash.enregistrer")}
                     </button>
-                    <button
-                      onClick={() => setModeEdition(false)}
-                      className="btn-public-outline"
-                    >
+                    <button onClick={() => setModeEdition(false)} className="btn-public-outline">
                       <X size={16} />
                       {t("clientDash.annuler")}
                     </button>
@@ -614,46 +625,30 @@ export default function ClientDashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase mb-1">
-                      {t("clientDash.nom")}
-                    </p>
+                    <p className="text-xs text-gray-500 uppercase mb-1">{t("clientDash.nom")}</p>
                     <p className="font-medium">{client.nom}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase mb-1">
-                      {t("clientDash.email")}
-                    </p>
+                    <p className="text-xs text-gray-500 uppercase mb-1">{t("clientDash.email")}</p>
                     <p className="font-medium">{client.email}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase mb-1">
-                      {t("clientDash.telephone")}
-                    </p>
+                    <p className="text-xs text-gray-500 uppercase mb-1">{t("clientDash.telephone")}</p>
                     <p className="font-medium">{client.telephone}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase mb-1">
-                      {t("clientDash.dateInscription")}
-                    </p>
-                    <p className="font-medium">
-                      {formatDate(client.date_inscription)}
-                    </p>
+                    <p className="text-xs text-gray-500 uppercase mb-1">{t("clientDash.dateInscription")}</p>
+                    <p className="font-medium">{formatDate(client.date_inscription)}</p>
                   </div>
                   {client.date_naissance && (
                     <div>
-                      <p className="text-xs text-gray-500 uppercase mb-1">
-                        {t("clientDash.dateNaissance")}
-                      </p>
-                      <p className="font-medium">
-                        {formatDate(client.date_naissance)}
-                      </p>
+                      <p className="text-xs text-gray-500 uppercase mb-1">{t("clientDash.dateNaissance")}</p>
+                      <p className="font-medium">{formatDate(client.date_naissance)}</p>
                     </div>
                   )}
                   {client.adresse && (
                     <div>
-                      <p className="text-xs text-gray-500 uppercase mb-1">
-                        {t("clientDash.adresse")}
-                      </p>
+                      <p className="text-xs text-gray-500 uppercase mb-1">{t("clientDash.adresse")}</p>
                       <p className="font-medium">{client.adresse}</p>
                     </div>
                   )}
@@ -678,60 +673,193 @@ export default function ClientDashboard() {
                 <div className="public-card p-12 text-center">
                   <CalendarDays size={48} className="text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-400">{t("clientDash.aucuneReservation")}</p>
-                  <Link
-                    to="/reservation"
-                    className="btn-public-cyan inline-flex mt-4"
-                  >
+                  <Link to="/reservation" className="btn-public-cyan inline-flex mt-4">
                     {t("clientDash.reserverMaintenant")}
                   </Link>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {reservations.map((res) => (
-                    <div
-                      key={res.id}
-                      className="public-card p-4 flex flex-col md:flex-row md:items-center gap-4"
-                    >
+                    <div key={res.id} className="public-card p-4 flex flex-col md:flex-row md:items-center gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span className="font-mono text-[#67E8F9] font-bold">
-                            {res.code_reservation}
-                          </span>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                              res.statut === "confirmee"
-                                ? "bg-green-500/10 text-green-400"
-                                : res.statut === "annulee"
-                                ? "bg-red-500/10 text-red-400"
-                                : res.statut === "terminee"
-                                ? "bg-gray-500/10 text-gray-400"
-                                : "bg-orange-500/10 text-orange-400"
-                            }`}
-                          >
-                            {res.statut}
-                          </span>
+                          <span className="font-mono text-[#67E8F9] font-bold">{res.code_reservation}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            res.statut === "confirmee" ? "bg-green-500/10 text-green-400"
+                            : res.statut === "annulee" ? "bg-red-500/10 text-red-400"
+                            : res.statut === "terminee" ? "bg-gray-500/10 text-gray-400"
+                            : "bg-orange-500/10 text-orange-400"
+                          }`}>{res.statut}</span>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                          <div>
-                            <p className="text-xs text-gray-500">Date</p>
-                            <p>{formatDate(res.date_reservation)}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Heure</p>
-                            <p>{res.heure_reservation?.substring(0, 5)}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Durée</p>
-                            <p>{res.duree}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Postes</p>
-                            <p>{res.nombre_postes}</p>
-                          </div>
+                          <div><p className="text-xs text-gray-500">Date</p><p>{formatDate(res.date_reservation)}</p></div>
+                          <div><p className="text-xs text-gray-500">Heure</p><p>{res.heure_reservation?.substring(0, 5)}</p></div>
+                          <div><p className="text-xs text-gray-500">Durée</p><p>{res.duree}</p></div>
+                          <div><p className="text-xs text-gray-500">Postes</p><p>{res.nombre_postes}</p></div>
                         </div>
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ===== ONGLET PORTEFEUILLE ===== */}
+          {ongletActif === "portefeuille" && (
+            <div className="anim-fade-up">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <WalletIcon size={20} className="text-[#67E8F9]" />
+                  {t("clientDash.monPortefeuille")}
+                </h2>
+                <button
+                  onClick={() => setModalRecharger(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#06B6D4] to-[#1E40AF] hover:opacity-90 text-white font-medium transition"
+                >
+                  <Plus size={16} />
+                  {t("clientDash.recharger")}
+                </button>
+              </div>
+
+              {chargement && !portefeuille ? (
+                <div className="text-center py-12">
+                  <Loader2 size={32} className="animate-spin text-[#67E8F9] mx-auto" />
+                </div>
+              ) : !portefeuille ? null : (
+                <div className="space-y-4">
+                  {/* Carte solde */}
+                  <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br from-[#06B6D4] via-[#1E40AF] to-[#7C3AED] text-white shadow-2xl">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/20 rounded-full blur-3xl" />
+
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-6">
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <WalletIcon size={28} />
+                            <span className="text-sm font-medium opacity-80 uppercase">Portefeuille</span>
+                          </div>
+                          <p className="text-white/70 text-xs mb-1">{t("clientDash.soldeDisponible")}</p>
+                          <p className="text-4xl md:text-5xl font-black">
+                            {formatPrix(portefeuille.stats.solde)} <span className="text-xl">Ar</span>
+                          </p>
+                        </div>
+                        {portefeuille.stats.demandes_en_attente > 0 && (
+                          <div className="bg-orange-500/90 backdrop-blur rounded-lg px-3 py-2 text-center">
+                            <p className="text-2xl font-bold">{portefeuille.stats.demandes_en_attente}</p>
+                            <p className="text-xs">en attente</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-white/20 backdrop-blur rounded-xl p-3">
+                          <ArrowDownLeft size={16} className="mb-1" />
+                          <p className="text-xs opacity-80 mb-0.5">Total rechargé</p>
+                          <p className="font-bold text-sm">{formatPrix(portefeuille.stats.total_recharge)} Ar</p>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur rounded-xl p-3">
+                          <ArrowUpRight size={16} className="mb-1" />
+                          <p className="text-xs opacity-80 mb-0.5">Total dépensé</p>
+                          <p className="font-bold text-sm">{formatPrix(portefeuille.stats.total_depense)} Ar</p>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur rounded-xl p-3">
+                          <Gift size={16} className="mb-1" />
+                          <p className="text-xs opacity-80 mb-0.5">Bonus reçus</p>
+                          <p className="font-bold text-sm">{formatPrix(portefeuille.stats.total_bonus_rechargement)} Ar</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Info bonus */}
+                  {portefeuille.config && parseInt(portefeuille.config.bonus_pct) > 0 && (
+                    <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 flex items-start gap-3">
+                      <Gift size={20} className="text-green-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-green-400">
+                          🎁 Bonus {portefeuille.config.bonus_pct}% sur rechargement
+                        </p>
+                        <p className="text-sm text-gray-300">
+                          Pour tout rechargement de {formatPrix(portefeuille.config.bonus_seuil)} Ar ou plus, 
+                          recevez {portefeuille.config.bonus_pct}% de bonus en plus !
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Comment recharger */}
+                  <div className="public-card p-5">
+                    <h3 className="font-semibold mb-3">{t("clientDash.commentRecharger")}</h3>
+                    <div className="space-y-2 text-sm text-gray-400">
+                      <div className="flex gap-3">
+                        <span className="bg-[#06B6D4] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold text-xs">1</span>
+                        <span>{t("clientDash.etapeRecharge1")}</span>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="bg-[#06B6D4] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold text-xs">2</span>
+                        <span>{t("clientDash.etapeRecharge2")}</span>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="bg-[#06B6D4] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold text-xs">3</span>
+                        <span>{t("clientDash.etapeRecharge3")}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Demandes en cours */}
+                  {portefeuille.demandes && portefeuille.demandes.length > 0 && (
+                    <div className="public-card p-5">
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <FileText size={16} className="text-[#67E8F9]" />
+                        {t("clientDash.mesDemandes")} ({portefeuille.demandes.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {portefeuille.demandes.map((d) => (
+                          <div key={d.id} className="flex items-center justify-between py-2 border-b border-[#1E40AF]/20 last:border-0 gap-2">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="p-2 rounded-lg bg-white/5 flex-shrink-0">
+                                {getMethodeIcon(d.methode)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate">
+                                  {formatPrix(d.montant)} Ar · {getMethodeLabel(d.methode)}
+                                </p>
+                                <p className="text-xs text-gray-500">{formatDateHeure(d.created_at)}</p>
+                              </div>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${getStatutDemandeColor(d.statut)}`}>
+                              {getStatutDemandeLabel(d.statut)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dernières transactions */}
+                  {portefeuille.transactions && portefeuille.transactions.length > 0 && (
+                    <div className="public-card p-5">
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <History size={16} className="text-[#67E8F9]" />
+                        {t("clientDash.dernieresTransactions")}
+                      </h3>
+                      <div className="space-y-2">
+                        {portefeuille.transactions.slice(0, 10).map((tx) => (
+                          <div key={tx.id} className="flex items-center justify-between py-2 border-b border-[#1E40AF]/20 last:border-0 gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">{tx.description}</p>
+                              <p className="text-xs text-gray-500">{formatDateHeure(tx.created_at)}</p>
+                            </div>
+                            <p className={`font-bold text-sm flex-shrink-0 ${tx.sens === "credit" ? "text-green-400" : "text-orange-400"}`}>
+                              {tx.sens === "credit" ? "+" : "-"}{formatPrix(tx.montant)} Ar
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -765,12 +893,8 @@ export default function ClientDashboard() {
                       <div className={`bg-gradient-to-br ${niveau.color} rounded-3xl p-6 text-white shadow-2xl`}>
                         <div className="flex items-center justify-between mb-4">
                           <div>
-                            <p className="text-white/70 text-xs uppercase">
-                              {t("clientDash.codeCarte")}
-                            </p>
-                            <p className="font-mono text-lg font-bold">
-                              {carteFidelite.code_carte}
-                            </p>
+                            <p className="text-white/70 text-xs uppercase">{t("clientDash.codeCarte")}</p>
+                            <p className="font-mono text-lg font-bold">{carteFidelite.code_carte}</p>
                           </div>
                           <div className="text-right">
                             <div className="text-3xl">{niveau.icon}</div>
@@ -778,12 +902,8 @@ export default function ClientDashboard() {
                           </div>
                         </div>
                         <div className="bg-white/10 backdrop-blur rounded-xl p-4">
-                          <p className="text-white/70 text-xs mb-1">
-                            {t("clientDash.pointsDisponibles")}
-                          </p>
-                          <p className="text-4xl font-bold">
-                            {carteFidelite.points_disponibles}
-                          </p>
+                          <p className="text-white/70 text-xs mb-1">{t("clientDash.pointsDisponibles")}</p>
+                          <p className="text-4xl font-bold">{carteFidelite.points_disponibles}</p>
                         </div>
                       </div>
                     );
@@ -791,20 +911,12 @@ export default function ClientDashboard() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="public-card p-4 text-center">
-                      <p className="text-xs text-gray-400 mb-1">
-                        {t("clientDash.pointsTotal")}
-                      </p>
-                      <p className="text-2xl font-bold text-[#67E8F9]">
-                        {carteFidelite.points_total}
-                      </p>
+                      <p className="text-xs text-gray-400 mb-1">{t("clientDash.pointsTotal")}</p>
+                      <p className="text-2xl font-bold text-[#67E8F9]">{carteFidelite.points_total}</p>
                     </div>
                     <div className="public-card p-4 text-center">
-                      <p className="text-xs text-gray-400 mb-1">
-                        {t("clientDash.pointsUtilises")}
-                      </p>
-                      <p className="text-2xl font-bold text-orange-400">
-                        {carteFidelite.points_utilises}
-                      </p>
+                      <p className="text-xs text-gray-400 mb-1">{t("clientDash.pointsUtilises")}</p>
+                      <p className="text-2xl font-bold text-orange-400">{carteFidelite.points_utilises}</p>
                     </div>
                   </div>
 
@@ -816,25 +928,13 @@ export default function ClientDashboard() {
                       </h3>
                       <div className="space-y-2">
                         {carteFidelite.historique.map((h) => (
-                          <div
-                            key={h.id}
-                            className="flex items-center justify-between py-2 border-b border-[#1E40AF]/20 last:border-0"
-                          >
+                          <div key={h.id} className="flex items-center justify-between py-2 border-b border-[#1E40AF]/20 last:border-0">
                             <div>
                               <p className="text-sm">{h.raison || h.type}</p>
-                              <p className="text-xs text-gray-500">
-                                {formatDate(h.created_at)}
-                              </p>
+                              <p className="text-xs text-gray-500">{formatDate(h.created_at)}</p>
                             </div>
-                            <span
-                              className={`font-bold text-sm ${
-                                parseInt(h.points) > 0
-                                  ? "text-green-400"
-                                  : "text-orange-400"
-                              }`}
-                            >
-                              {parseInt(h.points) > 0 ? "+" : ""}
-                              {h.points}
+                            <span className={`font-bold text-sm ${parseInt(h.points) > 0 ? "text-green-400" : "text-orange-400"}`}>
+                              {parseInt(h.points) > 0 ? "+" : ""}{h.points}
                             </span>
                           </div>
                         ))}
@@ -862,94 +962,40 @@ export default function ClientDashboard() {
                 <div className="space-y-4">
                   <div className="bg-gradient-to-br from-[#7C3AED] via-[#06B6D4] to-[#1E40AF] rounded-3xl p-6 md:p-8 text-white shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-                    
                     <div className="relative">
                       <div className="flex items-center gap-3 mb-4">
                         <Sparkles size={28} />
                         <div>
-                          <h3 className="text-xl md:text-2xl font-bold">
-                            {t("clientDash.invitezAmis")}
-                          </h3>
-                          <p className="text-white/80 text-sm">
-                            {t("clientDash.gagnezParrainage")}
-                          </p>
+                          <h3 className="text-xl md:text-2xl font-bold">{t("clientDash.invitezAmis")}</h3>
+                          <p className="text-white/80 text-sm">{t("clientDash.gagnezParrainage")}</p>
                         </div>
                       </div>
-
                       <div className="bg-white/20 backdrop-blur rounded-xl p-4 mb-4">
-                        <p className="text-white/70 text-xs uppercase mb-1">
-                          {t("clientDash.votreCode")}
-                        </p>
-                        <p className="text-2xl md:text-3xl font-mono font-bold">
-                          {parrainage.stats.code_parrainage}
-                        </p>
+                        <p className="text-white/70 text-xs uppercase mb-1">{t("clientDash.votreCode")}</p>
+                        <p className="text-2xl md:text-3xl font-mono font-bold">{parrainage.stats.code_parrainage}</p>
                       </div>
-
-                      <button
-                        onClick={copierLienParrainage}
-                        className="w-full flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur rounded-xl py-3 px-4 font-semibold transition"
-                      >
-                        {copie ? (
-                          <>
-                            <CheckCircle2 size={18} />
-                            {t("clientDash.lienCopie")}
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={18} />
-                            {t("clientDash.copierLien")}
-                          </>
-                        )}
+                      <button onClick={copierLienParrainage} className="w-full flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur rounded-xl py-3 px-4 font-semibold transition">
+                        {copie ? <><CheckCircle2 size={18} />{t("clientDash.lienCopie")}</> : <><Copy size={18} />{t("clientDash.copierLien")}</>}
                       </button>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="public-card p-4 text-center">
-                      <p className="text-xs text-gray-400 mb-1">
-                        {t("clientDash.totalParrainages")}
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {parrainage.stats.total || 0}
-                      </p>
+                      <p className="text-xs text-gray-400 mb-1">{t("clientDash.totalParrainages")}</p>
+                      <p className="text-2xl font-bold">{parrainage.stats.total || 0}</p>
                     </div>
                     <div className="public-card p-4 text-center">
-                      <p className="text-xs text-gray-400 mb-1">
-                        {t("clientDash.valides")}
-                      </p>
-                      <p className="text-2xl font-bold text-green-400">
-                        {parrainage.stats.valides || 0}
-                      </p>
+                      <p className="text-xs text-gray-400 mb-1">{t("clientDash.valides")}</p>
+                      <p className="text-2xl font-bold text-green-400">{parrainage.stats.valides || 0}</p>
                     </div>
                     <div className="public-card p-4 text-center">
-                      <p className="text-xs text-gray-400 mb-1">
-                        {t("clientDash.enAttente")}
-                      </p>
-                      <p className="text-2xl font-bold text-orange-400">
-                        {parrainage.stats.en_attente || 0}
-                      </p>
+                      <p className="text-xs text-gray-400 mb-1">{t("clientDash.enAttente")}</p>
+                      <p className="text-2xl font-bold text-orange-400">{parrainage.stats.en_attente || 0}</p>
                     </div>
                     <div className="public-card p-4 text-center">
-                      <p className="text-xs text-gray-400 mb-1">
-                        {t("clientDash.totalGagne")}
-                      </p>
-                      <p className="text-lg font-bold text-[#67E8F9]">
-                        {parseFloat(parrainage.stats.total_gagne || 0).toLocaleString("fr-FR")} Ar
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
-                    <div className="flex items-start gap-3">
-                      <Wallet size={20} className="text-green-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-semibold text-green-400 mb-1">
-                          {t("clientDash.soldeBonus")} : {parseFloat(parrainage.stats.solde_bonus || 0).toLocaleString("fr-FR")} Ar
-                        </p>
-                        <p className="text-sm text-gray-300">
-                          {t("clientDash.soldeUtilisable")}
-                        </p>
-                      </div>
+                      <p className="text-xs text-gray-400 mb-1">{t("clientDash.totalGagne")}</p>
+                      <p className="text-lg font-bold text-[#67E8F9]">{formatPrix(parrainage.stats.total_gagne)} Ar</p>
                     </div>
                   </div>
 
@@ -961,32 +1007,19 @@ export default function ClientDashboard() {
                       </h3>
                       <div className="space-y-2">
                         {parrainage.parrainages.map((p) => (
-                          <div
-                            key={p.id}
-                            className="flex items-center justify-between py-2 border-b border-[#1E40AF]/20 last:border-0"
-                          >
+                          <div key={p.id} className="flex items-center justify-between py-2 border-b border-[#1E40AF]/20 last:border-0">
                             <div>
                               <p className="text-sm font-medium">{p.filleul_nom}</p>
-                              <p className="text-xs text-gray-500">
-                                {formatDate(p.created_at)}
-                              </p>
+                              <p className="text-xs text-gray-500">{formatDate(p.created_at)}</p>
                             </div>
                             <div className="text-right">
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                  p.statut === "valide"
-                                    ? "bg-green-500/10 text-green-400"
-                                    : p.statut === "annule"
-                                    ? "bg-red-500/10 text-red-400"
-                                    : "bg-orange-500/10 text-orange-400"
-                                }`}
-                              >
-                                {p.statut}
-                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                p.statut === "valide" ? "bg-green-500/10 text-green-400"
+                                : p.statut === "annule" ? "bg-red-500/10 text-red-400"
+                                : "bg-orange-500/10 text-orange-400"
+                              }`}>{p.statut}</span>
                               {p.statut === "valide" && (
-                                <p className="text-xs text-green-400 mt-1">
-                                  +{parseFloat(p.recompense_parrain).toLocaleString("fr-FR")} Ar
-                                </p>
+                                <p className="text-xs text-green-400 mt-1">+{formatPrix(p.recompense_parrain)} Ar</p>
                               )}
                             </div>
                           </div>
@@ -1014,65 +1047,40 @@ export default function ClientDashboard() {
               ) : !badges || !badges.catalogue || badges.catalogue.length === 0 ? (
                 <div className="public-card p-12 text-center">
                   <Trophy size={48} className="text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400">
-                    {t("clientDash.aucunBadgeEncore") || "Aucun badge disponible"}
-                  </p>
+                  <p className="text-gray-400">{t("clientDash.aucunBadgeEncore") || "Aucun badge disponible"}</p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="public-card p-4 text-center">
-                      <div className="inline-flex p-2 rounded-lg bg-yellow-500/20 mb-2">
-                        <Trophy size={20} className="text-yellow-400" />
-                      </div>
+                      <div className="inline-flex p-2 rounded-lg bg-yellow-500/20 mb-2"><Trophy size={20} className="text-yellow-400" /></div>
                       <p className="text-xs text-gray-400 mb-1">Obtenus</p>
-                      <p className="text-2xl font-bold text-yellow-400">
-                        {badges.badges_obtenus?.length || 0}
-                      </p>
+                      <p className="text-2xl font-bold text-yellow-400">{badges.badges_obtenus?.length || 0}</p>
                     </div>
                     <div className="public-card p-4 text-center">
-                      <div className="inline-flex p-2 rounded-lg bg-cyan-500/20 mb-2">
-                        <Medal size={20} className="text-cyan-400" />
-                      </div>
+                      <div className="inline-flex p-2 rounded-lg bg-cyan-500/20 mb-2"><Medal size={20} className="text-cyan-400" /></div>
                       <p className="text-xs text-gray-400 mb-1">Total</p>
-                      <p className="text-2xl font-bold text-cyan-400">
-                        {badges.catalogue.length}
-                      </p>
+                      <p className="text-2xl font-bold text-cyan-400">{badges.catalogue.length}</p>
                     </div>
                     <div className="public-card p-4 text-center">
-                      <div className="inline-flex p-2 rounded-lg bg-green-500/20 mb-2">
-                        <Target size={20} className="text-green-400" />
-                      </div>
+                      <div className="inline-flex p-2 rounded-lg bg-green-500/20 mb-2"><Target size={20} className="text-green-400" /></div>
                       <p className="text-xs text-gray-400 mb-1">Progression</p>
                       <p className="text-2xl font-bold text-green-400">
-                        {Math.round(
-                          ((badges.badges_obtenus?.length || 0) /
-                            badges.catalogue.length) *
-                            100
-                        )}
-                        %
+                        {Math.round(((badges.badges_obtenus?.length || 0) / badges.catalogue.length) * 100)}%
                       </p>
                     </div>
                     <div className="public-card p-4 text-center">
-                      <div className="inline-flex p-2 rounded-lg bg-purple-500/20 mb-2">
-                        <Gift size={20} className="text-purple-400" />
-                      </div>
+                      <div className="inline-flex p-2 rounded-lg bg-purple-500/20 mb-2"><Gift size={20} className="text-purple-400" /></div>
                       <p className="text-xs text-gray-400 mb-1">Bonus</p>
                       <p className="text-lg font-bold text-purple-400">
-                        {(badges.badges_obtenus?.reduce(
-                          (sum, b) => sum + parseFloat(b.recompense_bonus || 0),
-                          0
-                        ) || 0).toLocaleString("fr-FR")} Ar
+                        {formatPrix(badges.badges_obtenus?.reduce((sum, b) => sum + parseFloat(b.recompense_bonus || 0), 0))} Ar
                       </p>
                     </div>
                   </div>
 
                   {["debut", "fidelite", "social", "special"].map((cat) => {
-                    const badgesCat = badges.catalogue.filter(
-                      (b) => b.categorie === cat
-                    );
+                    const badgesCat = badges.catalogue.filter((b) => b.categorie === cat);
                     if (badgesCat.length === 0) return null;
-
                     const catInfo = getCategorieBadge(cat);
 
                     return (
@@ -1081,70 +1089,36 @@ export default function ClientDashboard() {
                           <span className={`w-1 h-6 rounded-full bg-gradient-to-b ${catInfo.color}`} />
                           {catInfo.label}
                           <span className="text-xs text-gray-500">
-                            ({badgesCat.filter((b) => b.obtenu).length} /{" "}
-                            {badgesCat.length})
+                            ({badgesCat.filter((b) => b.obtenu).length} / {badgesCat.length})
                           </span>
                         </h3>
 
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                           {badgesCat.map((badge) => (
-                            <div
-                              key={badge.id}
-                              className={`public-card p-4 text-center relative ${
-                                badge.obtenu
-                                  ? "border-2 border-yellow-500/30 shadow-lg shadow-yellow-500/10"
-                                  : "opacity-70"
-                              }`}
-                            >
+                            <div key={badge.id} className={`public-card p-4 text-center relative ${
+                              badge.obtenu ? "border-2 border-yellow-500/30 shadow-lg shadow-yellow-500/10" : "opacity-70"
+                            }`}>
                               {badge.obtenu && (
                                 <div className="absolute top-2 right-2">
-                                  <Star
-                                    size={14}
-                                    className="text-yellow-400"
-                                    fill="currentColor"
-                                  />
+                                  <Star size={14} className="text-yellow-400" fill="currentColor" />
                                 </div>
                               )}
-
-                              <div
-                                className={`inline-flex p-3 rounded-2xl mb-3 ${
-                                  badge.obtenu
-                                    ? `bg-gradient-to-br ${catInfo.color}`
-                                    : "bg-white/5"
-                                }`}
-                              >
+                              <div className={`inline-flex p-3 rounded-2xl mb-3 ${badge.obtenu ? `bg-gradient-to-br ${catInfo.color}` : "bg-white/5"}`}>
                                 <span className="text-4xl">{badge.icone}</span>
                               </div>
-
-                              <h4 className="font-semibold text-sm mb-1">
-                                {badge.nom}
-                              </h4>
-                              <p className="text-xs text-gray-500 mb-2 line-clamp-2">
-                                {badge.description}
-                              </p>
-
+                              <h4 className="font-semibold text-sm mb-1">{badge.nom}</h4>
+                              <p className="text-xs text-gray-500 mb-2 line-clamp-2">{badge.description}</p>
                               {parseFloat(badge.recompense_bonus) > 0 && (
-                                <p
-                                  className={`text-xs font-bold ${
-                                    badge.obtenu ? "text-green-400" : "text-yellow-500"
-                                  }`}
-                                >
-                                  🎁 +{parseFloat(badge.recompense_bonus).toLocaleString("fr-FR")} Ar
+                                <p className={`text-xs font-bold ${badge.obtenu ? "text-green-400" : "text-yellow-500"}`}>
+                                  🎁 +{formatPrix(badge.recompense_bonus)} Ar
                                 </p>
                               )}
-
                               {!badge.obtenu && (
                                 <>
                                   <div className="w-full bg-white/5 rounded-full h-1.5 mt-2 overflow-hidden">
-                                    <div
-                                      className="h-full bg-gradient-to-r from-[#06B6D4] to-[#1E40AF]"
-                                      style={{ width: `${badge.progression || 0}%` }}
-                                    />
+                                    <div className="h-full bg-gradient-to-r from-[#06B6D4] to-[#1E40AF]" style={{ width: `${badge.progression || 0}%` }} />
                                   </div>
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    {badge.valeur_actuelle || 0} /{" "}
-                                    {badge.condition_valeur}
-                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">{badge.valeur_actuelle || 0} / {badge.condition_valeur}</p>
                                 </>
                               )}
                             </div>
@@ -1180,13 +1154,10 @@ export default function ClientDashboard() {
                   <Loader2 size={32} className="animate-spin text-[#67E8F9] mx-auto" />
                 </div>
               ) : !vip ? null : vip.abonnement ? (
-                /* VIP ACTIF */
                 <div className="space-y-4">
-                  {/* Carte VIP */}
                   <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br from-[#F59E0B] via-[#DC2626] to-[#7C3AED] text-white shadow-2xl">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
                     <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/20 rounded-full blur-3xl" />
-
                     <div className="relative">
                       <div className="flex items-start justify-between mb-6">
                         <div>
@@ -1199,88 +1170,52 @@ export default function ClientDashboard() {
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-white/70 text-xs uppercase mb-1">
-                            {t("clientDash.vipJoursRestants")}
-                          </p>
-                          <p className="text-4xl font-bold">
-                            {vip.abonnement.jours_restants}
-                          </p>
+                          <p className="text-white/70 text-xs uppercase mb-1">{t("clientDash.vipJoursRestants")}</p>
+                          <p className="text-4xl font-bold">{vip.abonnement.jours_restants}</p>
                           <p className="text-white/70 text-xs">jours</p>
                         </div>
                       </div>
-
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         <div className="bg-white/20 backdrop-blur rounded-xl p-3">
                           <Wifi size={20} className="mb-1" />
-                          <p className="text-xs text-white/80 mb-1">
-                            {t("clientDash.vipWifi")}
-                          </p>
+                          <p className="text-xs text-white/80 mb-1">{t("clientDash.vipWifi")}</p>
                           <p className="font-bold">∞ Illimité</p>
                         </div>
                         <div className="bg-white/20 backdrop-blur rounded-xl p-3">
                           <Printer size={20} className="mb-1" />
-                          <p className="text-xs text-white/80 mb-1">
-                            {t("clientDash.vipImpressions")}
-                          </p>
-                          <p className="font-bold">
-                            {vip.abonnement.impressions_restantes} /{" "}
-                            {vip.abonnement.impressions_limite}
-                          </p>
+                          <p className="text-xs text-white/80 mb-1">{t("clientDash.vipImpressions")}</p>
+                          <p className="font-bold">{vip.abonnement.impressions_restantes} / {vip.abonnement.impressions_limite}</p>
                         </div>
                         <div className="bg-white/20 backdrop-blur rounded-xl p-3 col-span-2 md:col-span-1">
                           <Zap size={20} className="mb-1" />
-                          <p className="text-xs text-white/80 mb-1">
-                            {t("clientDash.vipReduction")}
-                          </p>
-                          <p className="font-bold">
-                            {vip.config.reduction_services}% sur services
-                          </p>
+                          <p className="text-xs text-white/80 mb-1">{t("clientDash.vipReduction")}</p>
+                          <p className="font-bold">{vip.config.reduction_services}% sur services</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <button
-                      onClick={renouvelerVip}
-                      disabled={chargement}
-                      className="public-card p-4 hover:border-orange-500/50 transition text-left disabled:opacity-50"
-                    >
+                    <button onClick={renouvelerVip} disabled={chargement} className="public-card p-4 hover:border-orange-500/50 transition text-left disabled:opacity-50">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-orange-500/20">
-                          <RefreshCw size={20} className="text-orange-400" />
-                        </div>
+                        <div className="p-2 rounded-lg bg-orange-500/20"><RefreshCw size={20} className="text-orange-400" /></div>
                         <div>
-                          <p className="font-semibold">
-                            {t("clientDash.vipRenouveler")}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            +30 jours pour{" "}
-                            {parseFloat(vip.config.prix_mensuel).toLocaleString("fr-FR")} Ar
-                          </p>
+                          <p className="font-semibold">{t("clientDash.vipRenouveler")}</p>
+                          <p className="text-xs text-gray-400">+30 jours pour {formatPrix(vip.config.prix_mensuel)} Ar</p>
                         </div>
                       </div>
                     </button>
-
                     <div className="public-card p-4 text-left">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-purple-500/20">
-                          <Calendar size={20} className="text-purple-400" />
-                        </div>
+                        <div className="p-2 rounded-lg bg-purple-500/20"><Calendar size={20} className="text-purple-400" /></div>
                         <div>
-                          <p className="font-semibold">
-                            {t("clientDash.vipExpiration")}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {formatDate(vip.abonnement.date_fin)}
-                          </p>
+                          <p className="font-semibold">{t("clientDash.vipExpiration")}</p>
+                          <p className="text-xs text-gray-400">{formatDate(vip.abonnement.date_fin)}</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Statistiques d'utilisation */}
                   <div className="public-card p-5">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
                       <TrendingUp size={16} className="text-[#67E8F9]" />
@@ -1289,128 +1224,151 @@ export default function ClientDashboard() {
                     <div className="space-y-3">
                       <div>
                         <div className="flex items-center justify-between mb-1 text-sm">
-                          <span className="text-gray-400">
-                            {t("clientDash.vipImpressionsUtilisees")}
-                          </span>
-                          <span className="font-bold">
-                            {vip.abonnement.impressions_utilisees} /{" "}
-                            {vip.abonnement.impressions_limite}
-                          </span>
+                          <span className="text-gray-400">{t("clientDash.vipImpressionsUtilisees")}</span>
+                          <span className="font-bold">{vip.abonnement.impressions_utilisees} / {vip.abonnement.impressions_limite}</span>
                         </div>
                         <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-[#F59E0B] to-[#DC2626] rounded-full transition-all"
-                            style={{
-                              width: `${
-                                (vip.abonnement.impressions_utilisees /
-                                  vip.abonnement.impressions_limite) *
-                                100
-                              }%`,
-                            }}
-                          />
+                          <div className="h-full bg-gradient-to-r from-[#F59E0B] to-[#DC2626] rounded-full transition-all" style={{ width: `${(vip.abonnement.impressions_utilisees / vip.abonnement.impressions_limite) * 100}%` }} />
                         </div>
                       </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-1 text-sm">
-                          <span className="text-gray-400">
-                            {t("clientDash.vipWifiUtilise")}
-                          </span>
-                          <span className="font-bold">
-                            {parseFloat(vip.abonnement.wifi_utilise_heures).toFixed(1)} h
-                          </span>
-                        </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">{t("clientDash.vipWifiUtilise")}</span>
+                        <span className="font-bold">{parseFloat(vip.abonnement.wifi_utilise_heures).toFixed(1)} h</span>
                       </div>
                     </div>
                   </div>
-
-                  {/* Historique */}
-                  {vip.historique && vip.historique.length > 1 && (
-                    <div className="public-card p-5">
-                      <h3 className="font-semibold mb-3 flex items-center gap-2">
-                        <History size={16} className="text-[#67E8F9]" />
-                        {t("clientDash.vipHistorique")}
-                      </h3>
-                      <div className="space-y-2">
-                        {vip.historique.map((h) => (
-                          <div
-                            key={h.id}
-                            className="flex items-center justify-between py-2 border-b border-[#1E40AF]/20 last:border-0"
-                          >
-                            <div>
-                              <p className="text-sm font-medium">
-                                {formatDate(h.date_debut)} → {formatDate(h.date_fin)}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {h.statut}
-                              </p>
-                            </div>
-                            <span className="text-sm font-bold text-[#67E8F9]">
-                              {parseFloat(h.montant_paye).toLocaleString("fr-FR")} Ar
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               ) : (
-                /* PAS DE VIP - PROPOSITION */
                 <div className="space-y-4">
                   <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 bg-gradient-to-br from-[#F59E0B] via-[#DC2626] to-[#7C3AED] text-white shadow-2xl text-center">
                     <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
                     <div className="absolute bottom-0 right-0 w-64 h-64 bg-black/20 rounded-full blur-3xl" />
-
                     <div className="relative">
                       <div className="inline-flex p-4 rounded-full bg-white/20 backdrop-blur mb-4">
                         <Crown size={48} className="text-yellow-300" />
                       </div>
-                      <h3 className="text-2xl md:text-3xl font-bold mb-2">
-                        {t("clientDash.vipDevenir")}
-                      </h3>
-                      <p className="text-white/90 mb-6">
-                        {t("clientDash.vipDesc")}
-                      </p>
-
+                      <h3 className="text-2xl md:text-3xl font-bold mb-2">{t("clientDash.vipDevenir")}</h3>
+                      <p className="text-white/90 mb-6">{t("clientDash.vipDesc")}</p>
                       <div className="inline-flex items-baseline gap-2 mb-6">
-                        <span className="text-5xl font-black">
-                          {parseFloat(vip.config.prix_mensuel).toLocaleString("fr-FR")}
-                        </span>
+                        <span className="text-5xl font-black">{formatPrix(vip.config.prix_mensuel)}</span>
                         <span className="text-lg">Ar / mois</span>
                       </div>
-
                       <div className="max-w-md mx-auto text-left space-y-2 mb-8">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 size={20} className="text-yellow-300 flex-shrink-0" />
-                          <span>{t("clientDash.vipAvantage1")}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 size={20} className="text-yellow-300 flex-shrink-0" />
-                          <span>{vip.config.impressions_limite} impressions gratuites/mois</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 size={20} className="text-yellow-300 flex-shrink-0" />
-                          <span>-{vip.config.reduction_services}% sur tous les services</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 size={20} className="text-yellow-300 flex-shrink-0" />
-                          <span>{t("clientDash.vipAvantage4")}</span>
-                        </div>
+                        <div className="flex items-center gap-2"><CheckCircle2 size={20} className="text-yellow-300 flex-shrink-0" /><span>{t("clientDash.vipAvantage1")}</span></div>
+                        <div className="flex items-center gap-2"><CheckCircle2 size={20} className="text-yellow-300 flex-shrink-0" /><span>{vip.config.impressions_limite} impressions gratuites/mois</span></div>
+                        <div className="flex items-center gap-2"><CheckCircle2 size={20} className="text-yellow-300 flex-shrink-0" /><span>-{vip.config.reduction_services}% sur tous les services</span></div>
+                        <div className="flex items-center gap-2"><CheckCircle2 size={20} className="text-yellow-300 flex-shrink-0" /><span>{t("clientDash.vipAvantage4")}</span></div>
                       </div>
-
-                      <button
-                        onClick={() => setModalVip(true)}
-                        className="bg-white text-[#7C3AED] font-bold px-8 py-4 rounded-xl hover:bg-gray-100 transition text-lg shadow-lg inline-flex items-center gap-2"
-                      >
+                      <button onClick={() => setModalVip(true)} className="bg-white text-[#7C3AED] font-bold px-8 py-4 rounded-xl hover:bg-gray-100 transition text-lg shadow-lg inline-flex items-center gap-2">
                         <Diamond size={22} />
                         {t("clientDash.vipSouscrire")}
                       </button>
-
                       <p className="text-sm text-white/70 mt-4">
-                        {t("clientDash.vipSoldeActuel")} :{" "}
-                        {parseFloat(vip.solde_bonus || 0).toLocaleString("fr-FR")} Ar
+                        {t("clientDash.vipSoldeActuel")} : {formatPrix(vip.solde_bonus)} Ar
                       </p>
                     </div>
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ===== ONGLET TRANSACTIONS ===== */}
+          {ongletActif === "transactions" && (
+            <div className="anim-fade-up">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Receipt size={20} className="text-[#67E8F9]" />
+                  {t("clientDash.mesTransactions")}
+                </h2>
+                <button onClick={telechargerCSV} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-sm font-medium transition">
+                  <Download size={16} />
+                  {t("clientDash.exporterCSV")}
+                </button>
+              </div>
+
+              {transactionsStats && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                  <div className="public-card p-4">
+                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-1"><Wallet size={14} /> {t("clientDash.soldeActuel")}</div>
+                    <p className="text-lg font-bold text-[#67E8F9]">{formatPrix(transactionsStats.solde_actuel)} Ar</p>
+                  </div>
+                  <div className="public-card p-4">
+                    <div className="flex items-center gap-2 text-xs text-green-400 mb-1"><ArrowDownLeft size={14} /> {t("clientDash.totalCredite")}</div>
+                    <p className="text-lg font-bold text-green-400">+{formatPrix(transactionsStats.total_credite)} Ar</p>
+                  </div>
+                  <div className="public-card p-4">
+                    <div className="flex items-center gap-2 text-xs text-orange-400 mb-1"><ArrowUpRight size={14} /> {t("clientDash.totalDebite")}</div>
+                    <p className="text-lg font-bold text-orange-400">-{formatPrix(transactionsStats.total_debite)} Ar</p>
+                  </div>
+                  <div className="public-card p-4">
+                    <div className="flex items-center gap-2 text-xs text-purple-400 mb-1"><Receipt size={14} /> {t("clientDash.nbTransactions")}</div>
+                    <p className="text-lg font-bold text-purple-400">{transactionsStats.nb_transactions}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="public-card p-4 mb-4">
+                <div className="flex flex-col md:flex-row gap-3">
+                  <div className="flex-1 relative">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input type="text" value={rechercheTx} onChange={(e) => setRechercheTx(e.target.value)}
+                      placeholder={t("clientDash.rechercherTransaction")}
+                      className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-2.5 pl-10 pr-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none" />
+                  </div>
+                  <select value={filtreSens} onChange={(e) => setFiltreSens(e.target.value)}
+                    className="bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-2.5 px-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none">
+                    <option value="tous">{t("clientDash.tousMouvements")}</option>
+                    <option value="credit">{t("clientDash.credits")}</option>
+                    <option value="debit">{t("clientDash.debits")}</option>
+                  </select>
+                  <select value={filtreType} onChange={(e) => setFiltreType(e.target.value)}
+                    className="bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-2.5 px-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none">
+                    <option value="tous">{t("clientDash.tousTypes")}</option>
+                    <option value="parrainage_parrain">{t("clientDash.parrainage")}</option>
+                    <option value="badge">{t("clientDash.badge")}</option>
+                    <option value="roue">{t("clientDash.roue")}</option>
+                    <option value="vip_souscription">{t("clientDash.vipType")}</option>
+                    <option value="achat">{t("clientDash.achat")}</option>
+                    <option value="bonus_manuel">{t("clientDash.bonusManuel")}</option>
+                  </select>
+                </div>
+              </div>
+
+              {chargement ? (
+                <div className="text-center py-12">
+                  <Loader2 size={32} className="animate-spin text-[#67E8F9] mx-auto" />
+                </div>
+              ) : transactionsFiltrees.length === 0 ? (
+                <div className="public-card p-12 text-center">
+                  <Receipt size={48} className="text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400 mb-2">{t("clientDash.aucuneTransaction")}</p>
+                  <p className="text-xs text-gray-500">{t("clientDash.transactionsApparaitront")}</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {transactionsFiltrees.map((tx) => (
+                    <div key={tx.id} className="public-card p-4 flex items-start gap-3 hover:border-[#06B6D4]/30 transition">
+                      <div className={`p-2 rounded-lg border flex-shrink-0 ${getTypeColor(tx.type)}`}>
+                        <span className="text-xl">{getTypeIcon(tx.type)}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-sm">{tx.type_label || tx.type}</p>
+                            <p className="text-xs text-gray-400 line-clamp-1">{tx.description}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className={`font-bold text-sm ${tx.sens === "credit" ? "text-green-400" : "text-orange-400"}`}>
+                              {tx.sens === "credit" ? "+" : "-"}{formatPrix(tx.montant)} Ar
+                            </p>
+                            <p className="text-xs text-gray-500">{formatPrix(tx.solde_apres)} Ar</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500">{formatDateHeure(tx.created_at)}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -1431,43 +1389,25 @@ export default function ClientDashboard() {
               ) : notifications.length === 0 ? (
                 <div className="public-card p-12 text-center">
                   <Bell size={48} className="text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400">
-                    {t("clientDash.aucuneNotification")}
-                  </p>
+                  <p className="text-gray-400">{t("clientDash.aucuneNotification")}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {notifications.map((notif) => (
-                    <div
-                      key={notif.id}
-                      className={`public-card p-4 ${
-                        !notif.lu ? "border-l-4 border-l-[#06B6D4]" : ""
-                      }`}
-                      onClick={() => !notif.lu && marquerNotificationLue(notif.id)}
-                    >
+                    <div key={notif.id} className={`public-card p-4 ${!notif.lu ? "border-l-4 border-l-[#06B6D4]" : ""}`}
+                      onClick={() => !notif.lu && marquerNotificationLue(notif.id)}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <p className="font-semibold">{notif.titre}</p>
-                            {!notif.lu && (
-                              <span className="w-2 h-2 bg-[#06B6D4] rounded-full" />
-                            )}
+                            {!notif.lu && <span className="w-2 h-2 bg-[#06B6D4] rounded-full" />}
                           </div>
-                          <p className="text-sm text-gray-400">
-                            {notif.message}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-2">
-                            {formatDateHeure(notif.created_at)}
-                          </p>
+                          <p className="text-sm text-gray-400">{notif.message}</p>
+                          <p className="text-xs text-gray-500 mt-2">{formatDateHeure(notif.created_at)}</p>
                         </div>
                         {!notif.lu && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              marquerNotificationLue(notif.id);
-                            }}
-                            className="p-1.5 rounded bg-[#06B6D4]/10 hover:bg-[#06B6D4]/20 text-[#67E8F9] transition"
-                          >
+                          <button onClick={(e) => { e.stopPropagation(); marquerNotificationLue(notif.id); }}
+                            className="p-1.5 rounded bg-[#06B6D4]/10 hover:bg-[#06B6D4]/20 text-[#67E8F9] transition">
                             <Check size={14} />
                           </button>
                         )}
@@ -1489,54 +1429,25 @@ export default function ClientDashboard() {
 
               <div className="space-y-4 max-w-md">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">
-                    {t("clientDash.ancienMdp")}
-                  </label>
-                  <input
-                    type="password"
-                    value={motDePasse.ancien}
-                    onChange={(e) =>
-                      setMotDePasse({ ...motDePasse, ancien: e.target.value })
-                    }
-                    className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none"
-                  />
+                  <label className="block text-sm text-gray-400 mb-2">{t("clientDash.ancienMdp")}</label>
+                  <input type="password" value={motDePasse.ancien}
+                    onChange={(e) => setMotDePasse({ ...motDePasse, ancien: e.target.value })}
+                    className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">
-                    {t("clientDash.nouveauMdp")}
-                  </label>
-                  <input
-                    type="password"
-                    value={motDePasse.nouveau}
-                    onChange={(e) =>
-                      setMotDePasse({ ...motDePasse, nouveau: e.target.value })
-                    }
-                    className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none"
-                  />
+                  <label className="block text-sm text-gray-400 mb-2">{t("clientDash.nouveauMdp")}</label>
+                  <input type="password" value={motDePasse.nouveau}
+                    onChange={(e) => setMotDePasse({ ...motDePasse, nouveau: e.target.value })}
+                    className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">
-                    {t("clientDash.confirmerMdp")}
-                  </label>
-                  <input
-                    type="password"
-                    value={motDePasse.confirmer}
-                    onChange={(e) =>
-                      setMotDePasse({ ...motDePasse, confirmer: e.target.value })
-                    }
-                    className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none"
-                  />
+                  <label className="block text-sm text-gray-400 mb-2">{t("clientDash.confirmerMdp")}</label>
+                  <input type="password" value={motDePasse.confirmer}
+                    onChange={(e) => setMotDePasse({ ...motDePasse, confirmer: e.target.value })}
+                    className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none" />
                 </div>
-                <button
-                  onClick={changerMotDePasse}
-                  disabled={chargement}
-                  className="btn-public-cyan disabled:opacity-50"
-                >
-                  {chargement ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <Lock size={16} />
-                  )}
+                <button onClick={changerMotDePasse} disabled={chargement} className="btn-public-cyan disabled:opacity-50">
+                  {chargement ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
                   {t("clientDash.changerMdp")}
                 </button>
               </div>
@@ -1545,25 +1456,104 @@ export default function ClientDashboard() {
         </div>
       </section>
 
-      {/* ===== MODAL SOUSCRIPTION VIP ===== */}
+      {/* ===== MODAL RECHARGEMENT ===== */}
+      {modalRecharger && portefeuille && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => !chargement && setModalRecharger(false)}>
+          <div className="bg-[#112240] rounded-2xl max-w-md w-full border border-cyan-500/30 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-white/10 flex items-center gap-3 bg-gradient-to-r from-[#06B6D4]/10 to-[#1E40AF]/10 sticky top-0 bg-[#112240]">
+              <div className="p-2 rounded-lg bg-cyan-500/20">
+                <WalletIcon size={20} className="text-cyan-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">{t("clientDash.rechargerCompte")}</h2>
+                <p className="text-xs text-gray-400">{t("clientDash.remplirInfos")}</p>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">{t("clientDash.montantAr")} *</label>
+                <input type="number" value={formRecharge.montant}
+                  onChange={(e) => setFormRecharge({ ...formRecharge, montant: e.target.value })}
+                  placeholder="Ex: 10000"
+                  min={portefeuille.config.rechargement_min}
+                  max={portefeuille.config.rechargement_max}
+                  className="w-full bg-[#0A1628] border border-white/10 rounded-lg py-3 px-4 text-white text-lg font-bold focus:border-[#06B6D4] focus:outline-none" />
+                <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                  <span>Min : {formatPrix(portefeuille.config.rechargement_min)} Ar</span>
+                  <span>Max : {formatPrix(portefeuille.config.rechargement_max)} Ar</span>
+                </div>
+                {parseFloat(formRecharge.montant) >= parseFloat(portefeuille.config.bonus_seuil) && parseInt(portefeuille.config.bonus_pct) > 0 && (
+                  <div className="mt-2 bg-green-500/10 border border-green-500/30 rounded-lg p-2 text-xs text-green-400">
+                    🎁 Bonus : +{formatPrix(parseFloat(formRecharge.montant) * parseInt(portefeuille.config.bonus_pct) / 100)} Ar ({portefeuille.config.bonus_pct}%)
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">{t("clientDash.methodePaiement")} *</label>
+                <select value={formRecharge.methode}
+                  onChange={(e) => setFormRecharge({ ...formRecharge, methode: e.target.value })}
+                  className="w-full bg-[#0A1628] border border-white/10 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none">
+                  <option value="mvola">MVola</option>
+                  <option value="orange_money">Orange Money</option>
+                  <option value="airtel_money">Airtel Money</option>
+                  <option value="virement">Virement bancaire</option>
+                  <option value="especes">Espèces (au cybercafé)</option>
+                  <option value="autre">Autre</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">{t("clientDash.referencePaiement")}</label>
+                <input type="text" value={formRecharge.reference_paiement}
+                  onChange={(e) => setFormRecharge({ ...formRecharge, reference_paiement: e.target.value })}
+                  placeholder="Ex: MV240115123456"
+                  className="w-full bg-[#0A1628] border border-white/10 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none" />
+                <p className="text-xs text-gray-500 mt-1">
+                  {t("clientDash.referenceInfo")}
+                </p>
+              </div>
+
+              {portefeuille.config.instructions && (
+                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 text-xs text-gray-300">
+                  <p className="font-semibold text-cyan-400 mb-1">📌 {t("clientDash.instructions")}</p>
+                  <p className="whitespace-pre-line">{portefeuille.config.instructions}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-5 border-t border-white/10 flex gap-3 sticky bottom-0 bg-[#112240]">
+              <button onClick={() => setModalRecharger(false)} disabled={chargement}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition font-medium disabled:opacity-50">
+                {t("clientDash.annuler")}
+              </button>
+              <button onClick={demanderRechargement}
+                disabled={chargement || !formRecharge.montant}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#06B6D4] to-[#1E40AF] hover:opacity-90 text-white font-medium transition disabled:opacity-50 flex items-center justify-center gap-2">
+                {chargement ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                {t("clientDash.envoyerDemande")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== MODAL VIP ===== */}
       {modalVip && (
-        <div
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setModalVip(false)}
-        >
-          <div
-            className="bg-[#112240] rounded-2xl max-w-md w-full border border-orange-500/30 overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setModalVip(false)}>
+          <div className="bg-[#112240] rounded-2xl max-w-md w-full border border-orange-500/30 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b border-white/10 flex items-center gap-3 bg-gradient-to-r from-[#F59E0B]/10 to-[#DC2626]/10">
               <div className="p-2 rounded-lg bg-orange-500/20">
                 <Crown size={20} className="text-orange-400" />
               </div>
               <div>
                 <h2 className="text-lg font-bold">Devenir VIP</h2>
-                <p className="text-xs text-gray-400">
-                  Abonnement 30 jours
-                </p>
+                <p className="text-xs text-gray-400">Abonnement 30 jours</p>
               </div>
             </div>
 
@@ -1571,24 +1561,16 @@ export default function ClientDashboard() {
               <div className="bg-[#0A1628] rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-gray-400">Prix</span>
-                  <span className="font-bold text-lg">
-                    {parseFloat(vip?.config?.prix_mensuel || 0).toLocaleString("fr-FR")} Ar
-                  </span>
+                  <span className="font-bold text-lg">{formatPrix(vip?.config?.prix_mensuel)} Ar</span>
                 </div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400">Votre solde</span>
-                  <span className="font-bold text-green-400">
-                    {parseFloat(vip?.solde_bonus || 0).toLocaleString("fr-FR")} Ar
-                  </span>
+                  <span className="text-sm text-gray-400">Votre solde bonus</span>
+                  <span className="font-bold text-green-400">{formatPrix(vip?.solde_bonus)} Ar</span>
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-[#1E40AF]/20">
                   <span className="text-sm text-gray-400">Après souscription</span>
-                  <span className={`font-bold ${
-                    parseFloat(vip?.solde_bonus || 0) >= parseFloat(vip?.config?.prix_mensuel || 0)
-                      ? "text-cyan-400"
-                      : "text-red-400"
-                  }`}>
-                    {(parseFloat(vip?.solde_bonus || 0) - parseFloat(vip?.config?.prix_mensuel || 0)).toLocaleString("fr-FR")} Ar
+                  <span className={`font-bold ${parseFloat(vip?.solde_bonus || 0) >= parseFloat(vip?.config?.prix_mensuel || 0) ? "text-cyan-400" : "text-red-400"}`}>
+                    {formatPrix(parseFloat(vip?.solde_bonus || 0) - parseFloat(vip?.config?.prix_mensuel || 0))} Ar
                   </span>
                 </div>
               </div>
@@ -1596,35 +1578,19 @@ export default function ClientDashboard() {
               {parseFloat(vip?.solde_bonus || 0) < parseFloat(vip?.config?.prix_mensuel || 0) && (
                 <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg p-3 flex items-start gap-2">
                   <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
-                  <p>
-                    Solde insuffisant. Il vous manque{" "}
-                    {(parseFloat(vip?.config?.prix_mensuel || 0) - parseFloat(vip?.solde_bonus || 0)).toLocaleString("fr-FR")} Ar.
-                    Gagnez du bonus avec le parrainage et les badges !
-                  </p>
+                  <p>Solde insuffisant. Il vous manque {formatPrix(parseFloat(vip?.config?.prix_mensuel || 0) - parseFloat(vip?.solde_bonus || 0))} Ar. Gagnez du bonus avec le parrainage, les badges et la roue !</p>
                 </div>
               )}
             </div>
 
             <div className="p-5 border-t border-white/10 flex gap-3">
-              <button
-                onClick={() => setModalVip(false)}
-                className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition font-medium"
-              >
+              <button onClick={() => setModalVip(false)} className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition font-medium">
                 Annuler
               </button>
-              <button
-                onClick={souscrireVip}
-                disabled={
-                  chargement ||
-                  parseFloat(vip?.solde_bonus || 0) < parseFloat(vip?.config?.prix_mensuel || 0)
-                }
-                className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#F59E0B] to-[#DC2626] hover:opacity-90 text-white font-medium transition disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {chargement ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Diamond size={16} />
-                )}
+              <button onClick={souscrireVip}
+                disabled={chargement || parseFloat(vip?.solde_bonus || 0) < parseFloat(vip?.config?.prix_mensuel || 0)}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#F59E0B] to-[#DC2626] hover:opacity-90 text-white font-medium transition disabled:opacity-50 flex items-center justify-center gap-2">
+                {chargement ? <Loader2 size={16} className="animate-spin" /> : <Diamond size={16} />}
                 Confirmer
               </button>
             </div>

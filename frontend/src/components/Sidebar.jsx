@@ -29,6 +29,8 @@ import {
   Tag,
   Camera,
   Crown,
+  Wallet,
+  Star,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -42,6 +44,8 @@ const links = [
   { to: "/admin/fidelite", labelKey: "sidebar.fidelite", icon: Award },
   { to: "/admin/promotions", labelKey: "sidebar.promotions", icon: Tag },
   { to: "/admin/vip", labelKey: "sidebar.vip", icon: Crown },
+  { to: "/admin/portefeuilles", labelKey: "sidebar.portefeuilles", icon: Wallet },
+  { to: "/admin/avis", labelKey: "sidebar.avis", icon: Star },
   { to: "/admin/galerie", labelKey: "sidebar.galerie", icon: Camera },
   { to: "/admin/blog", labelKey: "sidebar.blog", icon: BookOpen },
   { to: "/admin/newsletter", labelKey: "sidebar.newsletter", icon: Send },
