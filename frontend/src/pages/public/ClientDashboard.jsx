@@ -41,9 +41,11 @@ import {
   Printer,
   Wifi,
   Ban,
+  Dices,
 } from "lucide-react";
 import { useClientAuth } from "../../context/ClientAuthContext";
 import { usePublicLang } from "../../context/PublicLangContext";
+import RoueFortune from "../../components/RoueFortune";
 
 const API_URL = "http://localhost/cybercafe-wifi/backend/api";
 
@@ -128,6 +130,7 @@ export default function ClientDashboard() {
     } else if (ongletActif === "vip") {
       chargerVip();
     }
+    // 🎡 L'onglet "roue" gère son propre chargement dans RoueFortune
   }, [ongletActif, isAuthenticated]);
 
   const chargerReservations = async () => {
@@ -483,6 +486,7 @@ export default function ClientDashboard() {
               { id: "fidelite", label: t("clientDash.ongletFidelite"), icon: Award },
               { id: "parrainage", label: t("clientDash.ongletParrainage"), icon: Users },
               { id: "badges", label: t("clientDash.ongletBadges"), icon: Trophy },
+              { id: "roue", label: t("clientDash.ongletRoue"), icon: Dices },
               { id: "vip", label: t("clientDash.ongletVip"), icon: Crown },
               { id: "notifications", label: t("clientDash.ongletNotifications"), icon: Bell, badge: nonLues },
               { id: "securite", label: t("clientDash.ongletSecurite"), icon: Lock },
@@ -674,7 +678,10 @@ export default function ClientDashboard() {
                 <div className="public-card p-12 text-center">
                   <CalendarDays size={48} className="text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-400">{t("clientDash.aucuneReservation")}</p>
-                  <Link to="/reservation" className="btn-public-cyan inline-flex mt-4">
+                  <Link
+                    to="/reservation"
+                    className="btn-public-cyan inline-flex mt-4"
+                  >
                     {t("clientDash.reserverMaintenant")}
                   </Link>
                 </div>
@@ -1148,6 +1155,15 @@ export default function ClientDashboard() {
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ===== ONGLET ROUE ===== */}
+          {ongletActif === "roue" && (
+            <div className="anim-fade-up">
+              <div className="public-card p-4 md:p-8">
+                <RoueFortune />
+              </div>
             </div>
           )}
 

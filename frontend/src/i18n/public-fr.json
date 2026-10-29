@@ -209,7 +209,6 @@
     "confirmerMdp": "Confirmer mot de passe",
     "changerMdp": "Changer le mot de passe",
     "soldeBonus": "Solde bonus",
-    "ongletParrainage": "Parrainage",
     "monParrainage": "Mon parrainage",
     "invitezAmis": "Invitez vos amis !",
     "gagnezParrainage": "Gagnez 500 Ar par ami inscrit",
@@ -256,7 +255,9 @@
     "vipAvantage1": "Wi-Fi illimité",
     "vipAvantage4": "Accès prioritaire",
     "vipSouscrire": "Souscrire maintenant",
-    "vipSoldeActuel": "Votre solde bonus actuel"
+    "vipSoldeActuel": "Votre solde bonus actuel",
+    "ongletRoue": "Ma roue",
+    "maRoue": "Roue de la fortune"
   },
   "footer": {
     "description": "Votre cybercafé de confiance à Ambalavao. Connexion Starlink haut débit, impression, photocopie et bien plus encore.",
