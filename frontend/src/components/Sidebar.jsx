@@ -1,36 +1,11 @@
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Ticket,
-  Users,
-  DollarSign,
-  BarChart3,
-  TrendingUp,
-  FileText,
-  FileDown,
-  Mail,
-  Settings,
-  Shield,
-  MonitorSmartphone,
-  Building2,
-  Store,
-  Database,
-  HelpCircle,
-  Activity,
-  LogOut,
-  Wifi,
-  Calendar,
-  Award,
-  BookOpen,
-  Send,
-  MessageCircle,
-  User,
-  Tag,
-  Camera,
-  Crown,
-  Wallet,
-  Star,
+  LayoutDashboard, Ticket, Users, DollarSign, BarChart3, TrendingUp,
+  FileText, FileDown, Mail, Settings, Shield, MonitorSmartphone,
+  Building2, Store, Database, HelpCircle, Activity, LogOut, Wifi,
+  Calendar, Award, BookOpen, Send, MessageCircle, User, Tag, Camera,
+  Crown, Wallet, Star, LifeBuoy,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -46,6 +21,7 @@ const links = [
   { to: "/admin/vip", labelKey: "sidebar.vip", icon: Crown },
   { to: "/admin/portefeuilles", labelKey: "sidebar.portefeuilles", icon: Wallet },
   { to: "/admin/avis", labelKey: "sidebar.avis", icon: Star },
+  { to: "/admin/support", labelKey: "sidebar.support", icon: LifeBuoy },
   { to: "/admin/galerie", labelKey: "sidebar.galerie", icon: Camera },
   { to: "/admin/blog", labelKey: "sidebar.blog", icon: BookOpen },
   { to: "/admin/newsletter", labelKey: "sidebar.newsletter", icon: Send },
@@ -79,12 +55,8 @@ export default function Sidebar() {
 
   useEffect(() => {
     const fetchNonLus = async () => {
-      const token =
-        localStorage.getItem("admin_token") ||
-        localStorage.getItem("token") ||
-        localStorage.getItem("auth_token");
+      const token = localStorage.getItem("admin_token") || localStorage.getItem("token") || localStorage.getItem("auth_token");
       if (!token) return;
-
       try {
         const res = await fetch(
           "http://localhost/cybercafe-wifi/backend/api/chat/admin/non-lus",
@@ -94,7 +66,6 @@ export default function Sidebar() {
         if (data.success) setNonLus(data.messages || 0);
       } catch (e) {}
     };
-
     fetchNonLus();
     const interval = setInterval(fetchNonLus, 10000);
     return () => clearInterval(interval);
@@ -114,18 +85,9 @@ export default function Sidebar() {
     }
   };
 
-  const getAvatarUrl = () => {
-    if (!admin?.avatar_url) return null;
-    return admin.avatar_url;
-  };
-
+  const getAvatarUrl = () => admin?.avatar_url || null;
   const avatarUrl = getAvatarUrl();
-  const initiales = (admin?.nom || "A")
-    .split(" ")
-    .map((m) => m[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const initiales = (admin?.nom || "A").split(" ").map((m) => m[0]).join("").toUpperCase().slice(0, 2);
 
   return (
     <>
@@ -148,9 +110,7 @@ export default function Sidebar() {
               end={end}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-3 rounded-lg transition ${
-                  isActive
-                    ? "bg-accent text-white shadow-lg shadow-accent/20"
-                    : "text-gray-300 hover:bg-white/5"
+                  isActive ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-gray-300 hover:bg-white/5"
                 }`
               }
             >
@@ -172,27 +132,15 @@ export default function Sidebar() {
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-full overflow-hidden border border-orange-500/30 bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
                 {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt={admin.nom}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                      e.target.nextSibling.style.display = "flex";
-                    }}
-                  />
+                  <img src={avatarUrl} alt={admin.nom} className="w-full h-full object-cover"
+                    onError={(e) => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }} />
                 ) : null}
-                <span
-                  style={{ display: avatarUrl ? "none" : "flex" }}
-                  className="w-full h-full items-center justify-center"
-                >
+                <span style={{ display: avatarUrl ? "none" : "flex" }} className="w-full h-full items-center justify-center">
                   {initiales}
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-gray-400">
-                  {t("sidebar.connecteEnTantQue")}
-                </p>
+                <p className="text-xs text-gray-400">{t("sidebar.connecteEnTantQue")}</p>
                 <p className="text-sm font-medium truncate">{admin.nom}</p>
               </div>
             </div>
@@ -201,17 +149,10 @@ export default function Sidebar() {
         )}
 
         <div className="px-3 pb-4">
-          <button
-            onClick={handleLogout}
-            disabled={deconnexionEnCours}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-gray-300 hover:bg-red-500/10 hover:text-red-400 transition disabled:opacity-50"
-          >
+          <button onClick={handleLogout} disabled={deconnexionEnCours}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-gray-300 hover:bg-red-500/10 hover:text-red-400 transition disabled:opacity-50">
             <LogOut size={18} className="flex-shrink-0" />
-            <span className="text-sm">
-              {deconnexionEnCours
-                ? "Déconnexion..."
-                : t("sidebar.deconnexion")}
-            </span>
+            <span className="text-sm">{deconnexionEnCours ? "Déconnexion..." : t("sidebar.deconnexion")}</span>
           </button>
         </div>
       </aside>

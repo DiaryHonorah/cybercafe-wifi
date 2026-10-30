@@ -50,7 +50,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
     echo json_encode([
         "message" => "API Cybercafé opérationnelle ✅",
-        "version" => "8.4",
+        "version" => "8.5",
         "routes" => [
             "== Auth Admin ==",
             "POST /api/auth/login",
@@ -127,6 +127,23 @@ if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
             "POST /api/avis/admin/rejeter          (admin)",
             "POST /api/avis/admin/repondre         (admin)",
             "POST /api/avis/admin/supprimer        (admin)",
+
+            "== Support (Client) ==",
+            "GET  /api/client/support/tickets          (client)",
+            "POST /api/client/support/tickets          (client)",
+            "GET  /api/client/support/tickets/{id}     (client)",
+            "POST /api/client/support/tickets/{id}/messages (client)",
+            "POST /api/client/support/tickets/{id}/noter    (client)",
+            "GET  /api/client/support/non-lus          (client)",
+
+            "== Support (Admin) ==",
+            "GET  /api/support/admin/tickets           (admin)",
+            "GET  /api/support/admin/tickets/{id}      (admin)",
+            "POST /api/support/admin/tickets/{id}/messages (admin)",
+            "POST /api/support/admin/tickets/{id}/statut   (admin)",
+            "POST /api/support/admin/tickets/{id}/priorite (admin)",
+            "POST /api/support/admin/tickets/{id}/supprimer (admin)",
+            "GET  /api/support/admin/non-lus           (admin)",
 
             "== Profil Admin ==",
             "GET  /api/profil/mon-profil           (admin)",
@@ -665,6 +682,73 @@ switch (true) {
         (new AvisController())->supprimer();
         break;
 
+    // ===== SUPPORT CLIENT =====
+    case $uri === '/api/client/support/tickets' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->mesTickets();
+        break;
+
+    case $uri === '/api/client/support/tickets' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->creer();
+        break;
+
+    case $uri === '/api/client/support/non-lus' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->nonLusClient();
+        break;
+
+    case preg_match('#^/api/client/support/tickets/(\d+)$#', $uri, $m) && $method === 'GET':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->detailClient((int) $m[1]);
+        break;
+
+    case preg_match('#^/api/client/support/tickets/(\d+)/messages$#', $uri, $m) && $method === 'POST':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->ajouterMessageClient((int) $m[1]);
+        break;
+
+    case preg_match('#^/api/client/support/tickets/(\d+)/noter$#', $uri, $m) && $method === 'POST':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->noter((int) $m[1]);
+        break;
+
+    // ===== SUPPORT ADMIN =====
+    case $uri === '/api/support/admin/tickets' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->listeAdmin();
+        break;
+
+    case $uri === '/api/support/admin/non-lus' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->nonLusAdmin();
+        break;
+
+    case preg_match('#^/api/support/admin/tickets/(\d+)$#', $uri, $m) && $method === 'GET':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->detailAdmin((int) $m[1]);
+        break;
+
+    case preg_match('#^/api/support/admin/tickets/(\d+)/messages$#', $uri, $m) && $method === 'POST':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->ajouterMessageAdmin((int) $m[1]);
+        break;
+
+    case preg_match('#^/api/support/admin/tickets/(\d+)/statut$#', $uri, $m) && $method === 'POST':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->changerStatut((int) $m[1]);
+        break;
+
+    case preg_match('#^/api/support/admin/tickets/(\d+)/priorite$#', $uri, $m) && $method === 'POST':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->changerPriorite((int) $m[1]);
+        break;
+
+    case preg_match('#^/api/support/admin/tickets/(\d+)/supprimer$#', $uri, $m) && $method === 'POST':
+        require_once __DIR__ . '/../controllers/TicketSupportController.php';
+        (new TicketSupportController())->supprimer((int) $m[1]);
+        break;
+
     // ===== PROFIL ADMIN =====
     case $uri === '/api/profil/mon-profil' && $method === 'GET':
         require_once __DIR__ . '/../controllers/ProfilController.php';
@@ -855,7 +939,7 @@ switch (true) {
         (new DashboardController())->graphique();
         break;
 
-    // ===== TICKETS =====
+    // ===== TICKETS WIFI =====
     case $uri === '/api/tickets/creer' && $method === 'POST':
         require_once __DIR__ . '/../controllers/TicketController.php';
         (new TicketController())->creer();

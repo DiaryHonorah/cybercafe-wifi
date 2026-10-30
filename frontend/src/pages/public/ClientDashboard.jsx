@@ -8,6 +8,7 @@ import {
   RefreshCw, Printer, Wifi, Ban, Dices, ArrowUpRight, ArrowDownLeft,
   Download, Filter, Receipt, Search, Wallet as WalletIcon, Banknote,
   Plus, Building2, Smartphone, FileText, Send, XCircle, ChevronRight,
+  LifeBuoy, MessageSquare, ArrowLeft, Shield,
 } from "lucide-react";
 import { useClientAuth } from "../../context/ClientAuthContext";
 import { usePublicLang } from "../../context/PublicLangContext";
@@ -53,6 +54,22 @@ export default function ClientDashboard() {
     reference_paiement: "",
   });
 
+  // Support
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [supportNonLus, setSupportNonLus] = useState(0);
+  const [supportConfig, setSupportConfig] = useState(null);
+  const [supportDetail, setSupportDetail] = useState(null);
+  const [modalNouveauTicket, setModalNouveauTicket] = useState(false);
+  const [nouveauTicket, setNouveauTicket] = useState({
+    sujet: "",
+    categorie: "autre",
+    priorite: "normale",
+    message: "",
+  });
+  const [nouveauMessage, setNouveauMessage] = useState("");
+  const [modalNoter, setModalNoter] = useState(null);
+  const [noteSatisfaction, setNoteSatisfaction] = useState(5);
+
   useEffect(() => {
     if (!loading && !isAuthenticated) navigate("/connexion");
   }, [loading, isAuthenticated, navigate]);
@@ -90,6 +107,7 @@ export default function ClientDashboard() {
     else if (ongletActif === "vip") chargerVip();
     else if (ongletActif === "transactions") chargerTransactions();
     else if (ongletActif === "portefeuille") chargerPortefeuille();
+    else if (ongletActif === "support") chargerSupport();
   }, [ongletActif, isAuthenticated]);
 
   useEffect(() => {
@@ -184,15 +202,121 @@ export default function ClientDashboard() {
     } catch (err) { console.error(err); } finally { setChargement(false); }
   };
 
+  const chargerSupport = async () => {
+    setChargement(true);
+    try {
+      const res = await fetchAvecToken(`${API_URL}/client/support/tickets`);
+      const data = await res.json();
+      if (data.success) {
+        setSupportTickets(data.tickets || []);
+        setSupportNonLus(data.non_lus || 0);
+        setSupportConfig(data.config);
+      }
+    } catch (err) { console.error(err); } finally { setChargement(false); }
+  };
+
+  const ouvrirTicket = async (ticketId) => {
+    setChargement(true);
+    try {
+      const res = await fetchAvecToken(`${API_URL}/client/support/tickets/${ticketId}`);
+      const data = await res.json();
+      if (data.success) {
+        setSupportDetail(data.ticket);
+        // Recharger la liste pour mettre à jour non_lus
+        chargerSupport();
+      }
+    } catch (err) { console.error(err); } finally { setChargement(false); }
+  };
+
+  const creerTicket = async () => {
+    if (!nouveauTicket.sujet.trim() || !nouveauTicket.message.trim()) {
+      setErreur("Sujet et message requis");
+      return;
+    }
+    setChargement(true);
+    setErreur(null);
+    try {
+      const res = await fetchAvecToken(`${API_URL}/client/support/tickets`, {
+        method: "POST",
+        body: JSON.stringify(nouveauTicket),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSucces("Ticket créé avec succès");
+        setModalNouveauTicket(false);
+        setNouveauTicket({ sujet: "", categorie: "autre", priorite: "normale", message: "" });
+        chargerSupport();
+        setTimeout(() => setSucces(null), 4000);
+      } else {
+        setErreur(data.message);
+      }
+    } catch (err) {
+      setErreur("Erreur serveur");
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  const envoyerMessageSupport = async () => {
+    if (!nouveauMessage.trim() || !supportDetail) return;
+    setChargement(true);
+    try {
+      const res = await fetchAvecToken(
+        `${API_URL}/client/support/tickets/${supportDetail.id}/messages`,
+        {
+          method: "POST",
+          body: JSON.stringify({ message: nouveauMessage }),
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setNouveauMessage("");
+        ouvrirTicket(supportDetail.id);
+      } else {
+        setErreur(data.message);
+      }
+    } catch (err) {
+      setErreur("Erreur serveur");
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  const noterTicket = async () => {
+    if (!modalNoter) return;
+    setChargement(true);
+    try {
+      const res = await fetchAvecToken(
+        `${API_URL}/client/support/tickets/${modalNoter.id}/noter`,
+        {
+          method: "POST",
+          body: JSON.stringify({ note: noteSatisfaction }),
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setSucces("Merci pour votre retour !");
+        setModalNoter(null);
+        setSupportDetail(null);
+        chargerSupport();
+        setTimeout(() => setSucces(null), 4000);
+      } else {
+        setErreur(data.message);
+      }
+    } catch (err) {
+      setErreur("Erreur serveur");
+    } finally {
+      setChargement(false);
+    }
+  };
+
   const demanderRechargement = async () => {
     setErreur(null);
     const montant = parseFloat(formRecharge.montant);
-
     if (!montant || montant <= 0) {
       setErreur("Montant invalide");
       return;
     }
-
     setChargement(true);
     try {
       const res = await fetchAvecToken(`${API_URL}/client/portefeuille/demander`, {
@@ -204,7 +328,6 @@ export default function ClientDashboard() {
         }),
       });
       const data = await res.json();
-
       if (data.success) {
         setSucces(data.message);
         setModalRecharger(false);
@@ -437,6 +560,42 @@ export default function ClientDashboard() {
     return labels[statut] || statut;
   };
 
+  const getPrioriteBadge = (priorite) => {
+    const badges = {
+      basse: { label: "Basse", color: "bg-gray-500/10 text-gray-400 border-gray-500/30" },
+      normale: { label: "Normale", color: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
+      haute: { label: "Haute", color: "bg-orange-500/10 text-orange-400 border-orange-500/30" },
+      urgente: { label: "Urgente", color: "bg-red-500/10 text-red-400 border-red-500/30" },
+    };
+    return badges[priorite] || badges.normale;
+  };
+
+  const getStatutTicketBadge = (statut) => {
+    const badges = {
+      ouvert: { label: "Ouvert", color: "bg-cyan-500/10 text-cyan-400 border-cyan-500/30" },
+      en_cours: { label: "En cours", color: "bg-orange-500/10 text-orange-400 border-orange-500/30" },
+      resolu: { label: "Résolu", color: "bg-green-500/10 text-green-400 border-green-500/30" },
+      ferme: { label: "Fermé", color: "bg-gray-500/10 text-gray-400 border-gray-500/30" },
+    };
+    return badges[statut] || badges.ouvert;
+  };
+
+  const getCategorieTicketIcon = (cat) => {
+    const icons = {
+      wifi: "📡", impression: "🖨️", reservation: "📅",
+      facturation: "💳", vip: "💎", autre: "❓",
+    };
+    return icons[cat] || "❓";
+  };
+
+  const getCategorieTicketLabel = (cat) => {
+    const labels = {
+      wifi: "Wi-Fi", impression: "Impression", reservation: "Réservation",
+      facturation: "Facturation", vip: "VIP", autre: "Autre",
+    };
+    return labels[cat] || cat;
+  };
+
   const transactionsFiltrees = transactions.filter((tx) => {
     if (!rechercheTx) return true;
     const search = rechercheTx.toLowerCase();
@@ -529,12 +688,13 @@ export default function ClientDashboard() {
               { id: "roue", label: t("clientDash.ongletRoue"), icon: Dices },
               { id: "vip", label: t("clientDash.ongletVip"), icon: Crown },
               { id: "transactions", label: t("clientDash.ongletTransactions"), icon: Receipt },
+              { id: "support", label: t("clientDash.ongletSupport"), icon: LifeBuoy, badge: supportNonLus },
               { id: "notifications", label: t("clientDash.ongletNotifications"), icon: Bell, badge: nonLues },
               { id: "securite", label: t("clientDash.ongletSecurite"), icon: Lock },
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setOngletActif(tab.id)}
+                onClick={() => { setOngletActif(tab.id); setSupportDetail(null); }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm whitespace-nowrap transition ${
                   ongletActif === tab.id
                     ? "bg-gradient-to-r from-[#06B6D4] to-[#1E40AF] text-white shadow-lg shadow-cyan-500/30"
@@ -728,11 +888,9 @@ export default function ClientDashboard() {
                 </div>
               ) : !portefeuille ? null : (
                 <div className="space-y-4">
-                  {/* Carte solde */}
                   <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br from-[#06B6D4] via-[#1E40AF] to-[#7C3AED] text-white shadow-2xl">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
                     <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/20 rounded-full blur-3xl" />
-
                     <div className="relative">
                       <div className="flex items-start justify-between mb-6">
                         <div>
@@ -752,7 +910,6 @@ export default function ClientDashboard() {
                           </div>
                         )}
                       </div>
-
                       <div className="grid grid-cols-3 gap-2">
                         <div className="bg-white/20 backdrop-blur rounded-xl p-3">
                           <ArrowDownLeft size={16} className="mb-1" />
@@ -773,23 +930,18 @@ export default function ClientDashboard() {
                     </div>
                   </div>
 
-                  {/* Info bonus */}
                   {portefeuille.config && parseInt(portefeuille.config.bonus_pct) > 0 && (
                     <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 flex items-start gap-3">
                       <Gift size={20} className="text-green-400 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-semibold text-green-400">
-                          🎁 Bonus {portefeuille.config.bonus_pct}% sur rechargement
-                        </p>
+                        <p className="font-semibold text-green-400">🎁 Bonus {portefeuille.config.bonus_pct}% sur rechargement</p>
                         <p className="text-sm text-gray-300">
-                          Pour tout rechargement de {formatPrix(portefeuille.config.bonus_seuil)} Ar ou plus, 
-                          recevez {portefeuille.config.bonus_pct}% de bonus en plus !
+                          Pour tout rechargement de {formatPrix(portefeuille.config.bonus_seuil)} Ar ou plus, recevez {portefeuille.config.bonus_pct}% de bonus en plus !
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {/* Comment recharger */}
                   <div className="public-card p-5">
                     <h3 className="font-semibold mb-3">{t("clientDash.commentRecharger")}</h3>
                     <div className="space-y-2 text-sm text-gray-400">
@@ -808,7 +960,6 @@ export default function ClientDashboard() {
                     </div>
                   </div>
 
-                  {/* Demandes en cours */}
                   {portefeuille.demandes && portefeuille.demandes.length > 0 && (
                     <div className="public-card p-5">
                       <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -838,7 +989,6 @@ export default function ClientDashboard() {
                     </div>
                   )}
 
-                  {/* Dernières transactions */}
                   {portefeuille.transactions && portefeuille.transactions.length > 0 && (
                     <div className="public-card p-5">
                       <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -1215,28 +1365,6 @@ export default function ClientDashboard() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="public-card p-5">
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <TrendingUp size={16} className="text-[#67E8F9]" />
-                      {t("clientDash.vipUtilisation")}
-                    </h3>
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex items-center justify-between mb-1 text-sm">
-                          <span className="text-gray-400">{t("clientDash.vipImpressionsUtilisees")}</span>
-                          <span className="font-bold">{vip.abonnement.impressions_utilisees} / {vip.abonnement.impressions_limite}</span>
-                        </div>
-                        <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-[#F59E0B] to-[#DC2626] rounded-full transition-all" style={{ width: `${(vip.abonnement.impressions_utilisees / vip.abonnement.impressions_limite) * 100}%` }} />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400">{t("clientDash.vipWifiUtilise")}</span>
-                        <span className="font-bold">{parseFloat(vip.abonnement.wifi_utilise_heures).toFixed(1)} h</span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -1374,6 +1502,208 @@ export default function ClientDashboard() {
             </div>
           )}
 
+          {/* ===== ONGLET SUPPORT ===== */}
+          {ongletActif === "support" && (
+            <div className="anim-fade-up">
+              {!supportDetail ? (
+                <>
+                  <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                    <div>
+                      <h2 className="text-xl font-bold flex items-center gap-2">
+                        <LifeBuoy size={20} className="text-[#67E8F9]" />
+                        {t("clientDash.mesTicketsSupport")}
+                      </h2>
+                      <p className="text-sm text-gray-400 mt-1">
+                        {t("clientDash.supportDescription")}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setModalNouveauTicket(true)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#06B6D4] to-[#1E40AF] hover:opacity-90 text-white font-medium transition"
+                    >
+                      <Plus size={16} />
+                      {t("clientDash.nouveauTicket")}
+                    </button>
+                  </div>
+
+                  {chargement ? (
+                    <div className="text-center py-12">
+                      <Loader2 size={32} className="animate-spin text-[#67E8F9] mx-auto" />
+                    </div>
+                  ) : supportTickets.length === 0 ? (
+                    <div className="public-card p-12 text-center">
+                      <LifeBuoy size={48} className="text-gray-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">
+                        {t("clientDash.aucunTicket")}
+                      </h3>
+                      <p className="text-sm text-gray-400 mb-4">
+                        {t("clientDash.aucunTicketDesc")}
+                      </p>
+                      <button
+                        onClick={() => setModalNouveauTicket(true)}
+                        className="btn-public-cyan inline-flex"
+                      >
+                        <Plus size={16} />
+                        {t("clientDash.creerPremierTicket")}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {supportTickets.map((ticket) => {
+                        const statutBadge = getStatutTicketBadge(ticket.statut);
+                        const prioriteBadge = getPrioriteBadge(ticket.priorite);
+                        return (
+                          <div
+                            key={ticket.id}
+                            onClick={() => ouvrirTicket(ticket.id)}
+                            className="public-card p-4 cursor-pointer hover:border-[#06B6D4]/50 transition"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 flex-shrink-0 text-xl">
+                                {getCategorieTicketIcon(ticket.categorie)}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                                      <span className="font-mono text-xs text-[#67E8F9] font-bold">
+                                        {ticket.reference}
+                                      </span>
+                                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statutBadge.color}`}>
+                                        {statutBadge.label}
+                                      </span>
+                                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${prioriteBadge.color}`}>
+                                        {prioriteBadge.label}
+                                      </span>
+                                      {ticket.non_lus > 0 && (
+                                        <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
+                                          {ticket.non_lus} nouveau{ticket.non_lus > 1 ? "x" : ""}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="font-semibold text-sm truncate">{ticket.sujet}</p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {getCategorieTicketLabel(ticket.categorie)} · {ticket.nb_messages} message{ticket.nb_messages > 1 ? "s" : ""} · {formatDateHeure(ticket.dernier_message_le)}
+                                    </p>
+                                  </div>
+                                  <ChevronRight size={16} className="text-gray-500 flex-shrink-0 mt-1" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Détail du ticket */
+                <div>
+                  <button
+                    onClick={() => setSupportDetail(null)}
+                    className="flex items-center gap-2 text-sm text-gray-400 hover:text-[#67E8F9] transition mb-4"
+                  >
+                    <ArrowLeft size={16} />
+                    {t("clientDash.retourListe")}
+                  </button>
+
+                  <div className="public-card p-6 mb-4">
+                    <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-sm text-[#67E8F9] font-bold">
+                          {supportDetail.reference}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getStatutTicketBadge(supportDetail.statut).color}`}>
+                          {getStatutTicketBadge(supportDetail.statut).label}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getPrioriteBadge(supportDetail.priorite).color}`}>
+                          {getPrioriteBadge(supportDetail.priorite).label}
+                        </span>
+                      </div>
+                    </div>
+                    <h2 className="text-xl font-bold mb-2">{supportDetail.sujet}</h2>
+                    <p className="text-xs text-gray-500">
+                      {getCategorieTicketLabel(supportDetail.categorie)} · {t("clientDash.ouvertLe")} {formatDateHeure(supportDetail.created_at)}
+                    </p>
+                  </div>
+
+                  {/* Messages */}
+                  <div className="space-y-3 mb-4">
+                    {supportDetail.messages?.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex gap-3 ${msg.auteur_type === "client" ? "flex-row-reverse" : ""}`}
+                      >
+                        <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-xs ${
+                          msg.auteur_type === "client"
+                            ? "bg-gradient-to-br from-[#06B6D4] to-[#1E40AF]"
+                            : msg.auteur_type === "admin"
+                            ? "bg-gradient-to-br from-[#F59E0B] to-[#DC2626]"
+                            : "bg-gray-600"
+                        }`}>
+                          {msg.auteur_type === "systeme" ? "⚙️" : (msg.auteur_nom || "?").slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className={`max-w-[80%] ${msg.auteur_type === "client" ? "text-right" : ""}`}>
+                          <div className={`rounded-2xl px-4 py-3 ${
+                            msg.auteur_type === "client"
+                              ? "bg-gradient-to-br from-[#06B6D4] to-[#1E40AF] text-white"
+                              : msg.auteur_type === "admin"
+                              ? "bg-[#F59E0B]/20 text-white border border-[#F59E0B]/30"
+                              : "bg-white/5 text-gray-400 italic text-sm"
+                          }`}>
+                            <p className="text-xs opacity-70 mb-1">
+                              {msg.auteur_type === "client" ? t("clientDash.vous") : msg.auteur_type === "admin" ? "Cyber Famille" : "Système"} · {formatDateHeure(msg.created_at)}
+                            </p>
+                            <p className="text-sm whitespace-pre-line">{msg.message}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Formulaire réponse */}
+                  {!["ferme"].includes(supportDetail.statut) && (
+                    <div className="public-card p-4">
+                      <textarea
+                        value={nouveauMessage}
+                        onChange={(e) => setNouveauMessage(e.target.value)}
+                        rows={3}
+                        placeholder={t("clientDash.ecrireMessage")}
+                        className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-2.5 px-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none resize-none"
+                      />
+                      <div className="flex justify-end mt-2">
+                        <button
+                          onClick={envoyerMessageSupport}
+                          disabled={chargement || !nouveauMessage.trim()}
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#06B6D4] to-[#1E40AF] hover:opacity-90 text-white font-medium transition disabled:opacity-50"
+                        >
+                          {chargement ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                          {t("clientDash.envoyer")}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bouton noter */}
+                  {supportDetail.statut === "resolu" && !supportDetail.note_satisfaction && (
+                    <div className="public-card p-4 bg-yellow-500/10 border border-yellow-500/30">
+                      <p className="text-sm text-yellow-400 font-medium mb-2">
+                        {t("clientDash.satisfactionQuestion")}
+                      </p>
+                      <button
+                        onClick={() => { setModalNoter(supportDetail); setNoteSatisfaction(5); }}
+                        className="btn-public-cyan"
+                      >
+                        <Star size={16} />
+                        {t("clientDash.donnerAvis")}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ===== ONGLET NOTIFICATIONS ===== */}
           {ongletActif === "notifications" && (
             <div className="anim-fade-up">
@@ -1456,13 +1786,146 @@ export default function ClientDashboard() {
         </div>
       </section>
 
+      {/* ===== MODAL NOUVEAU TICKET ===== */}
+      {modalNouveauTicket && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => !chargement && setModalNouveauTicket(false)}>
+          <div className="bg-[#112240] rounded-2xl max-w-lg w-full border border-cyan-500/30 my-8 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-white/10 flex items-center gap-3 sticky top-0 bg-[#112240]">
+              <div className="p-2 rounded-lg bg-cyan-500/20">
+                <LifeBuoy size={20} className="text-cyan-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">{t("clientDash.nouveauTicket")}</h2>
+                <p className="text-xs text-gray-400">{t("clientDash.decrivezProbleme")}</p>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">{t("clientDash.sujet")} *</label>
+                <input type="text" value={nouveauTicket.sujet}
+                  onChange={(e) => setNouveauTicket({ ...nouveauTicket, sujet: e.target.value })}
+                  placeholder={t("clientDash.sujetPlaceholder")}
+                  maxLength={200}
+                  className="w-full bg-[#0A1628] border border-white/10 rounded-lg py-2.5 px-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">{t("clientDash.categorie")}</label>
+                  <select value={nouveauTicket.categorie}
+                    onChange={(e) => setNouveauTicket({ ...nouveauTicket, categorie: e.target.value })}
+                    className="w-full bg-[#0A1628] border border-white/10 rounded-lg py-2.5 px-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none">
+                    <option value="wifi">Wi-Fi</option>
+                    <option value="impression">Impression</option>
+                    <option value="reservation">Réservation</option>
+                    <option value="facturation">Facturation</option>
+                    <option value="vip">VIP</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">{t("clientDash.priorite")}</label>
+                  <select value={nouveauTicket.priorite}
+                    onChange={(e) => setNouveauTicket({ ...nouveauTicket, priorite: e.target.value })}
+                    className="w-full bg-[#0A1628] border border-white/10 rounded-lg py-2.5 px-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none">
+                    <option value="basse">Basse</option>
+                    <option value="normale">Normale</option>
+                    <option value="haute">Haute</option>
+                    <option value="urgente">Urgente</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">{t("clientDash.message")} *</label>
+                <textarea value={nouveauTicket.message}
+                  onChange={(e) => setNouveauTicket({ ...nouveauTicket, message: e.target.value })}
+                  rows={5}
+                  placeholder={t("clientDash.messagePlaceholder")}
+                  maxLength={2000}
+                  className="w-full bg-[#0A1628] border border-white/10 rounded-lg py-2.5 px-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none resize-none" />
+                <p className="text-xs text-gray-500 mt-1">
+                  {nouveauTicket.message.length} / 2000
+                </p>
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-white/10 flex gap-3 sticky bottom-0 bg-[#112240]">
+              <button onClick={() => setModalNouveauTicket(false)} disabled={chargement}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition font-medium disabled:opacity-50">
+                {t("clientDash.annuler")}
+              </button>
+              <button onClick={creerTicket}
+                disabled={chargement || !nouveauTicket.sujet.trim() || !nouveauTicket.message.trim()}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#06B6D4] to-[#1E40AF] hover:opacity-90 text-white font-medium transition disabled:opacity-50 flex items-center justify-center gap-2">
+                {chargement ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                {t("clientDash.creerTicket")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== MODAL NOTER ===== */}
+      {modalNoter && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setModalNoter(null)}>
+          <div className="bg-[#112240] rounded-2xl max-w-md w-full border border-yellow-500/30"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-white/10 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-yellow-500/20">
+                <Star size={20} className="text-yellow-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">{t("clientDash.noterSatisfaction")}</h2>
+                <p className="text-xs text-gray-400">{modalNoter.reference}</p>
+              </div>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-gray-300">
+                {t("clientDash.commentSatisfaction")}
+              </p>
+              <div className="flex justify-center gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button key={n} onClick={() => setNoteSatisfaction(n)}>
+                    <Star
+                      size={40}
+                      className={n <= noteSatisfaction
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-gray-600"}
+                    />
+                  </button>
+                ))}
+              </div>
+              <p className="text-center text-sm text-yellow-400 font-medium">
+                {["Très mauvais", "Mauvais", "Moyen", "Bien", "Excellent"][noteSatisfaction - 1]}
+              </p>
+            </div>
+            <div className="p-5 border-t border-white/10 flex gap-3">
+              <button onClick={() => setModalNoter(null)} disabled={chargement}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition font-medium disabled:opacity-50">
+                {t("clientDash.annuler")}
+              </button>
+              <button onClick={noterTicket} disabled={chargement}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 hover:opacity-90 text-white font-medium transition disabled:opacity-50 flex items-center justify-center gap-2">
+                {chargement ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                {t("clientDash.envoyer")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ===== MODAL RECHARGEMENT ===== */}
       {modalRecharger && portefeuille && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => !chargement && setModalRecharger(false)}>
           <div className="bg-[#112240] rounded-2xl max-w-md w-full border border-cyan-500/30 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}>
-            <div className="p-5 border-b border-white/10 flex items-center gap-3 bg-gradient-to-r from-[#06B6D4]/10 to-[#1E40AF]/10 sticky top-0 bg-[#112240]">
+            <div className="p-5 border-b border-white/10 flex items-center gap-3 sticky top-0 bg-[#112240]">
               <div className="p-2 rounded-lg bg-cyan-500/20">
                 <WalletIcon size={20} className="text-cyan-400" />
               </div>
@@ -1512,9 +1975,7 @@ export default function ClientDashboard() {
                   onChange={(e) => setFormRecharge({ ...formRecharge, reference_paiement: e.target.value })}
                   placeholder="Ex: MV240115123456"
                   className="w-full bg-[#0A1628] border border-white/10 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none" />
-                <p className="text-xs text-gray-500 mt-1">
-                  {t("clientDash.referenceInfo")}
-                </p>
+                <p className="text-xs text-gray-500 mt-1">{t("clientDash.referenceInfo")}</p>
               </div>
 
               {portefeuille.config.instructions && (
@@ -1556,7 +2017,6 @@ export default function ClientDashboard() {
                 <p className="text-xs text-gray-400">Abonnement 30 jours</p>
               </div>
             </div>
-
             <div className="p-5 space-y-4">
               <div className="bg-[#0A1628] rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
@@ -1578,11 +2038,10 @@ export default function ClientDashboard() {
               {parseFloat(vip?.solde_bonus || 0) < parseFloat(vip?.config?.prix_mensuel || 0) && (
                 <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg p-3 flex items-start gap-2">
                   <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
-                  <p>Solde insuffisant. Il vous manque {formatPrix(parseFloat(vip?.config?.prix_mensuel || 0) - parseFloat(vip?.solde_bonus || 0))} Ar. Gagnez du bonus avec le parrainage, les badges et la roue !</p>
+                  <p>Solde insuffisant. Il vous manque {formatPrix(parseFloat(vip?.config?.prix_mensuel || 0) - parseFloat(vip?.solde_bonus || 0))} Ar.</p>
                 </div>
               )}
             </div>
-
             <div className="p-5 border-t border-white/10 flex gap-3">
               <button onClick={() => setModalVip(false)} className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition font-medium">
                 Annuler

@@ -50,6 +50,7 @@ import Monitoring from "./pages/Monitoring";
 import Vip from "./pages/Vip";
 import Portefeuilles from "./pages/Portefeuilles";
 import Avis from "./pages/Avis";
+import Support from "./pages/Support";
 import Sauvegarde from "./pages/Sauvegarde";
 import Recettes from "./pages/Recettes";
 import Rapport from "./pages/Rapport";
@@ -78,13 +79,8 @@ function AdminLayout() {
 
       {sidebarOuverte && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div
-            className="fixed inset-0 bg-black/60"
-            onClick={() => setSidebarOuverte(false)}
-          />
-          <div className="relative z-10">
-            <Sidebar />
-          </div>
+          <div className="fixed inset-0 bg-black/60" onClick={() => setSidebarOuverte(false)} />
+          <div className="relative z-10"><Sidebar /></div>
         </div>
       )}
 
@@ -108,6 +104,7 @@ function AdminLayout() {
             <Route path="/vip" element={<Vip />} />
             <Route path="/portefeuilles" element={<Portefeuilles />} />
             <Route path="/avis" element={<Avis />} />
+            <Route path="/support" element={<Support />} />
             <Route path="/sauvegarde" element={<Sauvegarde />} />
             <Route path="/recettes" element={<Recettes />} />
             <Route path="/rapport" element={<Rapport />} />
@@ -141,7 +138,6 @@ export default function App() {
             <BrowserRouter>
               <OfflineBanner />
               <Routes>
-                {/* ===== ROUTES PUBLIQUES ===== */}
                 <Route element={<PublicLayout />}>
                   <Route path="/" element={<Accueil />} />
                   <Route path="/services" element={<Services />} />
@@ -160,11 +156,9 @@ export default function App() {
                   <Route path="/mon-compte" element={<ClientDashboard />} />
                 </Route>
 
-                {/* ===== AUTHENTIFICATION ADMIN ===== */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/portail" element={<Portail />} />
 
-                {/* ===== ADMIN ===== */}
                 <Route
                   path="/admin/*"
                   element={
