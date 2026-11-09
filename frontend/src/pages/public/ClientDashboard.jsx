@@ -8,7 +8,7 @@ import {
   RefreshCw, Printer, Wifi, Ban, Dices, ArrowUpRight, ArrowDownLeft,
   Download, Filter, Receipt, Search, Wallet as WalletIcon, Banknote,
   Plus, Building2, Smartphone, FileText, Send, XCircle, ChevronRight,
-  LifeBuoy, MessageSquare, ArrowLeft, Shield,
+  LifeBuoy, MessageSquare, ArrowLeft, Shield, Wrench,
 } from "lucide-react";
 import { useClientAuth } from "../../context/ClientAuthContext";
 import { usePublicLang } from "../../context/PublicLangContext";
@@ -70,6 +70,10 @@ export default function ClientDashboard() {
   const [modalNoter, setModalNoter] = useState(null);
   const [noteSatisfaction, setNoteSatisfaction] = useState(5);
 
+  // Rendez-vous
+  const [rdvListe, setRdvListe] = useState([]);
+  const [detailRdv, setDetailRdv] = useState(null);
+
   useEffect(() => {
     if (!loading && !isAuthenticated) navigate("/connexion");
   }, [loading, isAuthenticated, navigate]);
@@ -108,6 +112,7 @@ export default function ClientDashboard() {
     else if (ongletActif === "transactions") chargerTransactions();
     else if (ongletActif === "portefeuille") chargerPortefeuille();
     else if (ongletActif === "support") chargerSupport();
+    else if (ongletActif === "rendezvous") chargerRdv();
   }, [ongletActif, isAuthenticated]);
 
   useEffect(() => {
@@ -215,6 +220,15 @@ export default function ClientDashboard() {
     } catch (err) { console.error(err); } finally { setChargement(false); }
   };
 
+  const chargerRdv = async () => {
+    setChargement(true);
+    try {
+      const res = await fetchAvecToken(`${API_URL}/client/rdv/mes-rdv`);
+      const data = await res.json();
+      if (data.success) setRdvListe(data.rdv || []);
+    } catch (err) { console.error(err); } finally { setChargement(false); }
+  };
+
   const ouvrirTicket = async (ticketId) => {
     setChargement(true);
     try {
@@ -222,7 +236,6 @@ export default function ClientDashboard() {
       const data = await res.json();
       if (data.success) {
         setSupportDetail(data.ticket);
-        // Recharger la liste pour mettre à jour non_lus
         chargerSupport();
       }
     } catch (err) { console.error(err); } finally { setChargement(false); }
@@ -596,6 +609,17 @@ export default function ClientDashboard() {
     return labels[cat] || cat;
   };
 
+  const getStatutRdvBadge = (statut) => {
+    const badges = {
+      en_attente: { label: "En attente", color: "bg-orange-500/10 text-orange-400 border-orange-500/30" },
+      confirme: { label: "Confirmé", color: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
+      termine: { label: "Terminé", color: "bg-green-500/10 text-green-400 border-green-500/30" },
+      annule: { label: "Annulé", color: "bg-red-500/10 text-red-400 border-red-500/30" },
+      no_show: { label: "Absent", color: "bg-gray-500/10 text-gray-400 border-gray-500/30" },
+    };
+    return badges[statut] || badges.en_attente;
+  };
+
   const transactionsFiltrees = transactions.filter((tx) => {
     if (!rechercheTx) return true;
     const search = rechercheTx.toLowerCase();
@@ -688,6 +712,7 @@ export default function ClientDashboard() {
               { id: "roue", label: t("clientDash.ongletRoue"), icon: Dices },
               { id: "vip", label: t("clientDash.ongletVip"), icon: Crown },
               { id: "transactions", label: t("clientDash.ongletTransactions"), icon: Receipt },
+              { id: "rendezvous", label: t("clientDash.ongletRdv"), icon: Wrench },
               { id: "support", label: t("clientDash.ongletSupport"), icon: LifeBuoy, badge: supportNonLus },
               { id: "notifications", label: t("clientDash.ongletNotifications"), icon: Bell, badge: nonLues },
               { id: "securite", label: t("clientDash.ongletSecurite"), icon: Lock },
@@ -1497,6 +1522,156 @@ export default function ClientDashboard() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ===== ONGLET RENDEZ-VOUS ===== */}
+          {ongletActif === "rendezvous" && (
+            <div className="anim-fade-up">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Wrench size={20} className="text-[#67E8F9]" />
+                  {t("clientDash.mesRdv")}
+                </h2>
+                <Link
+                  to="/rendez-vous"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#06B6D4] to-[#1E40AF] hover:opacity-90 text-white font-medium transition"
+                >
+                  <Plus size={16} />
+                  {t("clientDash.prendreRdv")}
+                </Link>
+              </div>
+
+              {chargement ? (
+                <div className="text-center py-12">
+                  <Loader2 size={32} className="animate-spin text-[#67E8F9] mx-auto" />
+                </div>
+              ) : rdvListe.length === 0 ? (
+                <div className="public-card p-12 text-center">
+                  <Wrench size={48} className="text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400 mb-2">{t("clientDash.aucunRdv")}</p>
+                  <p className="text-xs text-gray-500 mb-4">
+                    {t("clientDash.rdvDesc")}
+                  </p>
+                  <Link to="/rendez-vous" className="btn-public-cyan inline-flex">
+                    <Plus size={16} />
+                    {t("clientDash.prendreRdv")}
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {rdvListe.map((r) => {
+                    const statutBadge = getStatutRdvBadge(r.statut);
+                    return (
+                      <div
+                        key={r.id}
+                        onClick={() => setDetailRdv(r)}
+                        className="public-card p-4 hover:border-[#06B6D4]/30 transition cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="font-mono text-[#67E8F9] font-bold text-sm">
+                                {r.reference}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statutBadge.color}`}>
+                                {statutBadge.label}
+                              </span>
+                            </div>
+                            <p className="font-semibold flex items-center gap-2">
+                              <span className="text-xl">{r.service_icone}</span>
+                              {r.service_nom}
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-500 mt-2">
+                              <div>
+                                <p>📅 Date</p>
+                                <p className="text-gray-300 font-medium">{formatDate(r.date_rdv)}</p>
+                              </div>
+                              <div>
+                                <p>🕐 Heure</p>
+                                <p className="text-gray-300 font-medium">
+                                  {r.heure_debut?.substring(0, 5)} → {r.heure_fin?.substring(0, 5)}
+                                </p>
+                              </div>
+                              {r.service_tarif > 0 && (
+                                <div>
+                                  <p>💰 Tarif</p>
+                                  <p className="text-cyan-400 font-bold">{formatPrix(r.service_tarif)} Ar</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <ChevronRight size={20} className="text-gray-400 flex-shrink-0" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Modal détail RDV */}
+              {detailRdv && (
+                <div
+                  className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+                  onClick={() => setDetailRdv(null)}
+                >
+                  <div
+                    className="bg-[#112240] rounded-2xl max-w-md w-full border border-white/10"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="p-5 border-b border-white/10 flex items-center justify-between">
+                      <div>
+                        <h2 className="text-lg font-bold">{detailRdv.reference}</h2>
+                        <p className="text-xs text-gray-400">
+                          {detailRdv.service_icone} {detailRdv.service_nom}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setDetailRdv(null)}
+                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                    <div className="p-5 space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Date</span>
+                        <span className="font-medium">{formatDate(detailRdv.date_rdv)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Heure</span>
+                        <span className="font-medium">
+                          {detailRdv.heure_debut?.substring(0, 5)} → {detailRdv.heure_fin?.substring(0, 5)}
+                        </span>
+                      </div>
+                      {detailRdv.description && (
+                        <div>
+                          <p className="text-gray-400 mb-1">Votre description</p>
+                          <p className="text-gray-300 bg-[#0A1628] rounded p-2">
+                            {detailRdv.description}
+                          </p>
+                        </div>
+                      )}
+                      {detailRdv.notes_technicien && (
+                        <div>
+                          <p className="text-gray-400 mb-1">Notes du technicien</p>
+                          <p className="text-gray-300 bg-[#0A1628] rounded p-2">
+                            {detailRdv.notes_technicien}
+                          </p>
+                        </div>
+                      )}
+                      {detailRdv.raison_annulation && (
+                        <div>
+                          <p className="text-red-400 mb-1">Raison d'annulation</p>
+                          <p className="text-gray-300 bg-[#0A1628] rounded p-2">
+                            {detailRdv.raison_annulation}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

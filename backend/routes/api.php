@@ -50,7 +50,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
     echo json_encode([
         "message" => "API Cybercafé opérationnelle ✅",
-        "version" => "8.5",
+        "version" => "8.7",
         "routes" => [
             "== Auth Admin ==",
             "POST /api/auth/login",
@@ -144,6 +144,35 @@ if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
             "POST /api/support/admin/tickets/{id}/priorite (admin)",
             "POST /api/support/admin/tickets/{id}/supprimer (admin)",
             "GET  /api/support/admin/non-lus           (admin)",
+
+            "== Leaderboard ==",
+            "GET  /api/leaderboard                     (public)",
+            "GET  /api/client/leaderboard/ma-position  (client)",
+            "GET  /api/leaderboard/admin/config         (admin)",
+            "POST /api/leaderboard/admin/config         (admin)",
+            "GET  /api/leaderboard/admin/classement     (admin)",
+            "POST /api/leaderboard/admin/archiver       (admin)",
+            "GET  /api/leaderboard/admin/historique     (admin)",
+
+            "== Rendez-vous (Public) ==",
+            "GET  /api/rdv/config                      (public)",
+            "GET  /api/rdv/creneaux?date=X&service_id=Y (public)",
+            "POST /api/rdv                             (public)",
+            "GET  /api/rdv/detail?reference=RDV-XXXX   (public)",
+
+            "== Rendez-vous (Client) ==",
+            "GET  /api/client/rdv/mes-rdv              (client)",
+
+            "== Rendez-vous (Admin) ==",
+            "GET  /api/rdv/admin/liste                 (admin)",
+            "POST /api/rdv/admin/statut                (admin)",
+            "POST /api/rdv/admin/supprimer             (admin)",
+            "GET  /api/rdv/admin/services              (admin)",
+            "POST /api/rdv/admin/services/creer        (admin)",
+            "POST /api/rdv/admin/services/modifier     (admin)",
+            "POST /api/rdv/admin/services/supprimer    (admin)",
+            "GET  /api/rdv/admin/config                (admin)",
+            "POST /api/rdv/admin/config                (admin)",
 
             "== Profil Admin ==",
             "GET  /api/profil/mon-profil           (admin)",
@@ -747,6 +776,115 @@ switch (true) {
     case preg_match('#^/api/support/admin/tickets/(\d+)/supprimer$#', $uri, $m) && $method === 'POST':
         require_once __DIR__ . '/../controllers/TicketSupportController.php';
         (new TicketSupportController())->supprimer((int) $m[1]);
+        break;
+
+    // ===== LEADERBOARD =====
+    case $uri === '/api/leaderboard' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/LeaderboardController.php';
+        (new LeaderboardController())->classementPublic();
+        break;
+
+    case $uri === '/api/client/leaderboard/ma-position' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/LeaderboardController.php';
+        (new LeaderboardController())->maPosition();
+        break;
+
+    case $uri === '/api/leaderboard/admin/config' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/LeaderboardController.php';
+        (new LeaderboardController())->adminGetConfig();
+        break;
+
+    case $uri === '/api/leaderboard/admin/config' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/LeaderboardController.php';
+        (new LeaderboardController())->adminSaveConfig();
+        break;
+
+    case $uri === '/api/leaderboard/admin/classement' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/LeaderboardController.php';
+        (new LeaderboardController())->adminClassement();
+        break;
+
+    case $uri === '/api/leaderboard/admin/archiver' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/LeaderboardController.php';
+        (new LeaderboardController())->adminArchiver();
+        break;
+
+    case $uri === '/api/leaderboard/admin/historique' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/LeaderboardController.php';
+        (new LeaderboardController())->adminHistorique();
+        break;
+
+    // ===== RENDEZ-VOUS PUBLIC =====
+    case $uri === '/api/rdv/config' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->getConfig();
+        break;
+
+    case $uri === '/api/rdv/creneaux' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->creneaux();
+        break;
+
+    case $uri === '/api/rdv' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->creer();
+        break;
+
+    case $uri === '/api/rdv/detail' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->detail();
+        break;
+
+    // ===== RENDEZ-VOUS CLIENT =====
+    case $uri === '/api/client/rdv/mes-rdv' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->mesRdv();
+        break;
+
+    // ===== RENDEZ-VOUS ADMIN =====
+    case $uri === '/api/rdv/admin/liste' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->listeAdmin();
+        break;
+
+    case $uri === '/api/rdv/admin/statut' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->changerStatut();
+        break;
+
+    case $uri === '/api/rdv/admin/supprimer' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->supprimer();
+        break;
+
+    case $uri === '/api/rdv/admin/services' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->listeServices();
+        break;
+
+    case $uri === '/api/rdv/admin/services/creer' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->creerService();
+        break;
+
+    case $uri === '/api/rdv/admin/services/modifier' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->modifierService();
+        break;
+
+    case $uri === '/api/rdv/admin/services/supprimer' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->supprimerService();
+        break;
+
+    case $uri === '/api/rdv/admin/config' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->adminGetConfig();
+        break;
+
+    case $uri === '/api/rdv/admin/config' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/RendezVousController.php';
+        (new RendezVousController())->adminSaveConfig();
         break;
 
     // ===== PROFIL ADMIN =====

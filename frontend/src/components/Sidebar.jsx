@@ -1,11 +1,39 @@
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Ticket, Users, DollarSign, BarChart3, TrendingUp,
-  FileText, FileDown, Mail, Settings, Shield, MonitorSmartphone,
-  Building2, Store, Database, HelpCircle, Activity, LogOut, Wifi,
-  Calendar, Award, BookOpen, Send, MessageCircle, User, Tag, Camera,
-  Crown, Wallet, Star, LifeBuoy,
+  LayoutDashboard,
+  Ticket,
+  Users,
+  DollarSign,
+  BarChart3,
+  TrendingUp,
+  FileText,
+  FileDown,
+  Mail,
+  Settings,
+  Shield,
+  MonitorSmartphone,
+  Building2,
+  Store,
+  Database,
+  HelpCircle,
+  Activity,
+  LogOut,
+  Wifi,
+  Calendar,
+  Award,
+  BookOpen,
+  Send,
+  MessageCircle,
+  User,
+  Tag,
+  Camera,
+  Crown,
+  Wallet,
+  Star,
+  LifeBuoy,
+  Trophy,
+  Wrench,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -21,11 +49,13 @@ const links = [
   { to: "/admin/vip", labelKey: "sidebar.vip", icon: Crown },
   { to: "/admin/portefeuilles", labelKey: "sidebar.portefeuilles", icon: Wallet },
   { to: "/admin/avis", labelKey: "sidebar.avis", icon: Star },
-  { to: "/admin/support", labelKey: "sidebar.support", icon: LifeBuoy },
+  { to: "/admin/support", labelKey: "sidebar.support", icon: LifeBuoy, badge: "support" },
+  { to: "/admin/leaderboard", labelKey: "sidebar.leaderboard", icon: Trophy },
+  { to: "/admin/rendezvous", labelKey: "sidebar.rendezvous", icon: Wrench },
   { to: "/admin/galerie", labelKey: "sidebar.galerie", icon: Camera },
   { to: "/admin/blog", labelKey: "sidebar.blog", icon: BookOpen },
   { to: "/admin/newsletter", labelKey: "sidebar.newsletter", icon: Send },
-  { to: "/admin/chat", labelKey: "sidebar.chat", icon: MessageCircle, badge: true },
+  { to: "/admin/chat", labelKey: "sidebar.chat", icon: MessageCircle, badge: "chat" },
   { to: "/admin/profil", labelKey: "sidebar.profil", icon: User },
   { to: "/admin/monitoring", labelKey: "sidebar.monitoring", icon: Activity },
   { to: "/admin/recettes", labelKey: "sidebar.recettes", icon: DollarSign },
@@ -51,21 +81,36 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const [confirmDeconnexion, setConfirmDeconnexion] = useState(false);
   const [deconnexionEnCours, setDeconnexionEnCours] = useState(false);
-  const [nonLus, setNonLus] = useState(0);
+  const [nonLusChat, setNonLusChat] = useState(0);
+  const [nonLusSupport, setNonLusSupport] = useState(0);
 
   useEffect(() => {
     const fetchNonLus = async () => {
-      const token = localStorage.getItem("admin_token") || localStorage.getItem("token") || localStorage.getItem("auth_token");
+      const token =
+        localStorage.getItem("admin_token") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("auth_token");
       if (!token) return;
+
       try {
-        const res = await fetch(
+        const resChat = await fetch(
           "http://localhost/cybercafe-wifi/backend/api/chat/admin/non-lus",
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        const data = await res.json();
-        if (data.success) setNonLus(data.messages || 0);
+        const dataChat = await resChat.json();
+        if (dataChat.success) setNonLusChat(dataChat.messages || 0);
+      } catch (e) {}
+
+      try {
+        const resSupport = await fetch(
+          "http://localhost/cybercafe-wifi/backend/api/support/admin/non-lus",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const dataSupport = await resSupport.json();
+        if (dataSupport.success) setNonLusSupport(dataSupport.non_lus || 0);
       } catch (e) {}
     };
+
     fetchNonLus();
     const interval = setInterval(fetchNonLus, 10000);
     return () => clearInterval(interval);
@@ -85,9 +130,18 @@ export default function Sidebar() {
     }
   };
 
-  const getAvatarUrl = () => admin?.avatar_url || null;
+  const getAvatarUrl = () => {
+    if (!admin?.avatar_url) return null;
+    return admin.avatar_url;
+  };
+
   const avatarUrl = getAvatarUrl();
-  const initiales = (admin?.nom || "A").split(" ").map((m) => m[0]).join("").toUpperCase().slice(0, 2);
+  const initiales = (admin?.nom || "A")
+    .split(" ")
+    .map((m) => m[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <>
@@ -103,28 +157,36 @@ export default function Sidebar() {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {links.map(({ to, labelKey, icon: Icon, end, badge }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-3 rounded-lg transition ${
-                  isActive ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-gray-300 hover:bg-white/5"
-                }`
-              }
-            >
-              <Icon size={18} className="flex-shrink-0" />
-              <span className="text-sm font-medium truncate flex-1">
-                {t(labelKey) || labelKey.split(".")[1]}
-              </span>
-              {badge && nonLus > 0 && (
-                <span className="min-w-[20px] h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1.5">
-                  {nonLus > 99 ? "99+" : nonLus}
+          {links.map(({ to, labelKey, icon: Icon, end, badge }) => {
+            let badgeCount = 0;
+            if (badge === "chat") badgeCount = nonLusChat;
+            if (badge === "support") badgeCount = nonLusSupport;
+
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-3 rounded-lg transition ${
+                    isActive
+                      ? "bg-accent text-white shadow-lg shadow-accent/20"
+                      : "text-gray-300 hover:bg-white/5"
+                  }`
+                }
+              >
+                <Icon size={18} className="flex-shrink-0" />
+                <span className="text-sm font-medium truncate flex-1">
+                  {t(labelKey) || labelKey.split(".")[1]}
                 </span>
-              )}
-            </NavLink>
-          ))}
+                {badgeCount > 0 && (
+                  <span className="min-w-[20px] h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1.5">
+                    {badgeCount > 99 ? "99+" : badgeCount}
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
 
         {admin && (
@@ -132,15 +194,27 @@ export default function Sidebar() {
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-full overflow-hidden border border-orange-500/30 bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt={admin.nom} className="w-full h-full object-cover"
-                    onError={(e) => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }} />
+                  <img
+                    src={avatarUrl}
+                    alt={admin.nom}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.nextSibling.style.display = "flex";
+                    }}
+                  />
                 ) : null}
-                <span style={{ display: avatarUrl ? "none" : "flex" }} className="w-full h-full items-center justify-center">
+                <span
+                  style={{ display: avatarUrl ? "none" : "flex" }}
+                  className="w-full h-full items-center justify-center"
+                >
                   {initiales}
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-gray-400">{t("sidebar.connecteEnTantQue")}</p>
+                <p className="text-xs text-gray-400">
+                  {t("sidebar.connecteEnTantQue")}
+                </p>
                 <p className="text-sm font-medium truncate">{admin.nom}</p>
               </div>
             </div>
@@ -149,10 +223,17 @@ export default function Sidebar() {
         )}
 
         <div className="px-3 pb-4">
-          <button onClick={handleLogout} disabled={deconnexionEnCours}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-gray-300 hover:bg-red-500/10 hover:text-red-400 transition disabled:opacity-50">
+          <button
+            onClick={handleLogout}
+            disabled={deconnexionEnCours}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-gray-300 hover:bg-red-500/10 hover:text-red-400 transition disabled:opacity-50"
+          >
             <LogOut size={18} className="flex-shrink-0" />
-            <span className="text-sm">{deconnexionEnCours ? "Déconnexion..." : t("sidebar.deconnexion")}</span>
+            <span className="text-sm">
+              {deconnexionEnCours
+                ? "Déconnexion..."
+                : t("sidebar.deconnexion")}
+            </span>
           </button>
         </div>
       </aside>

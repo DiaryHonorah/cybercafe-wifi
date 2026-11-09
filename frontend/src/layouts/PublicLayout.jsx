@@ -35,6 +35,8 @@ export default function PublicLayout() {
     { to: "/fidelite", labelKey: "nav.fidelite" },
     { to: "/blog", labelKey: "nav.blog" },
     { to: "/galerie", labelKey: "nav.galerie" },
+    { to: "/classement", labelKey: "nav.classement" },
+    { to: "/rendez-vous", labelKey: "nav.rendezvous" },
     { to: "/faq", labelKey: "nav.faq" },
     { to: "/contact", labelKey: "nav.contact" },
   ];
@@ -71,14 +73,14 @@ export default function PublicLayout() {
             </Link>
 
             {/* Navigation desktop */}
-            <nav className="hidden xl:flex items-center gap-0.5">
+            <nav className="hidden xl:flex items-center gap-1">
               {liens.map((lien) => (
                 <NavLink
                   key={lien.to}
                   to={lien.to}
                   end={lien.end}
                   className={({ isActive }) =>
-                    `px-2.5 py-2 rounded-lg text-xs font-medium transition ${
+                    `px-2 py-2 rounded-lg text-xs font-medium transition whitespace-nowrap ${
                       isActive
                         ? "text-[#67E8F9] bg-[#06B6D4]/10"
                         : "text-gray-300 hover:text-[#67E8F9] hover:bg-white/5"
@@ -147,18 +149,18 @@ export default function PublicLayout() {
                 <>
                   <Link
                     to="/login"
-                    className="flex items-center gap-1.5 text-xs text-gray-300 hover:text-[#67E8F9] transition"
+                    className="flex items-center gap-1.5 text-xs text-gray-300 hover:text-[#67E8F9] transition whitespace-nowrap"
                   >
                     <LogIn size={14} />
                     Admin
                   </Link>
                   <Link
                     to="/connexion"
-                    className="text-xs text-gray-300 hover:text-[#67E8F9] transition"
+                    className="text-xs text-gray-300 hover:text-[#67E8F9] transition whitespace-nowrap"
                   >
                     Connexion
                   </Link>
-                  <Link to="/portail" className="btn-public-cyan text-xs px-3 py-2">
+                  <Link to="/portail" className="btn-public-cyan text-xs px-3 py-2 whitespace-nowrap">
                     {t("nav.seConnecter")}
                   </Link>
                 </>
@@ -291,7 +293,7 @@ export default function PublicLayout() {
                 {t("footer.navigation")}
               </h4>
               <ul className="space-y-2 text-sm">
-                {liens.slice(0, 5).map((lien) => (
+                {liens.slice(0, 7).map((lien) => (
                   <li key={lien.to}>
                     <Link
                       to={lien.to}
