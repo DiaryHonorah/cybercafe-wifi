@@ -1,40 +1,30 @@
 import { useState, useEffect } from "react";
 import {
   Camera,
-  Wifi,
-  Printer,
-  Users,
-  Monitor,
-  Coffee,
-  BookOpen,
-  Store,
-  ZoomIn,
   X,
   ChevronLeft,
   ChevronRight,
+  ThumbsUp, // ✅ Remplace Facebook
+  Link,     // ✅ Remplace LinkIcon
+  Download,
   Loader2,
   AlertCircle,
-  ImageOff,
+  ZoomIn,
+  Image as ImageIcon,
+  Share2,   // ✅ Remplace Twitter
 } from "lucide-react";
 import { usePublicLang } from "../../context/PublicLangContext";
 
 const API_URL = "http://localhost/cybercafe-wifi/backend/api";
 
 export default function Galerie() {
-  const { t, langue } = usePublicLang();
+  const { t } = usePublicLang();
   const [photos, setPhotos] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(null);
-  const [categorieActive, setCategorieActive] = useState("all");
-  const [modalPhoto, setModalPhoto] = useState(null);
-  const [modalIndex, setModalIndex] = useState(0);
-
-  const categories = [
-    { id: "all", labelKey: "galeriePage.filtreTout", icon: Camera },
-    { id: "espace", labelKey: "galeriePage.filtreEspace", icon: Store },
-    { id: "equipement", labelKey: "galeriePage.filtreEquipement", icon: Monitor },
-    { id: "services", labelKey: "galeriePage.filtreServices", icon: Printer },
-  ];
+  const [filtreCategorie, setFiltreCategorie] = useState("toutes");
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [copie, setCopie] = useState(false);
 
   useEffect(() => {
     chargerPhotos();
@@ -42,11 +32,14 @@ export default function Galerie() {
 
   const chargerPhotos = async () => {
     setChargement(true);
+    setErreur(null);
     try {
       const res = await fetch(`${API_URL}/galerie/photos`);
       const data = await res.json();
       if (data.success) {
         setPhotos(data.photos || []);
+      } else {
+        setErreur(data.message);
       }
     } catch (err) {
       setErreur("Impossible de charger la galerie");
@@ -55,115 +48,115 @@ export default function Galerie() {
     }
   };
 
-  const photosFiltrees =
-    categorieActive === "all"
-      ? photos
-      : photos.filter((p) => p.categorie === categorieActive);
+  const photosFiltrees = photos.filter((p) => {
+    if (filtreCategorie === "toutes") return true;
+    return p.categorie === filtreCategorie;
+  });
 
-  const ouvrirModal = (photo, index) => {
-    setModalPhoto(photo);
-    setModalIndex(index);
+  const ouvrirLightbox = (index) => {
+    setLightboxIndex(index);
+    document.body.style.overflow = "hidden";
   };
 
-  const fermerModal = () => {
-    setModalPhoto(null);
-  };
-
-  const photoPrecedente = () => {
-    const newIndex = modalIndex > 0 ? modalIndex - 1 : photosFiltrees.length - 1;
-    setModalIndex(newIndex);
-    setModalPhoto(photosFiltrees[newIndex]);
+  const fermerLightbox = () => {
+    setLightboxIndex(null);
+    document.body.style.overflow = "auto";
   };
 
   const photoSuivante = () => {
-    const newIndex = modalIndex < photosFiltrees.length - 1 ? modalIndex + 1 : 0;
-    setModalIndex(newIndex);
-    setModalPhoto(photosFiltrees[newIndex]);
+    if (lightboxIndex === null) return;
+    setLightboxIndex((prev) => (prev + 1) % photosFiltrees.length);
   };
 
-  // Navigation clavier
+  const photoPrecedente = () => {
+    if (lightboxIndex === null) return;
+    setLightboxIndex((prev) => (prev - 1 + photosFiltrees.length) % photosFiltrees.length);
+  };
+
+  // Gérer les touches du clavier
   useEffect(() => {
-    if (!modalPhoto) return;
-
-    const handleKey = (e) => {
-      if (e.key === "Escape") fermerModal();
-      if (e.key === "ArrowLeft") photoPrecedente();
+    const handleKeyDown = (e) => {
+      if (lightboxIndex === null) return;
+      if (e.key === "Escape") fermerLightbox();
       if (e.key === "ArrowRight") photoSuivante();
+      if (e.key === "ArrowLeft") photoPrecedente();
     };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxIndex, photosFiltrees.length]);
 
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [modalPhoto, modalIndex]);
-
-  const getTitre = (photo) => {
-    if (langue === "mg" && photo.titre_mg) return photo.titre_mg;
-    return photo.titre;
+  const copierLien = async (photo) => {
+    const url = `${window.location.origin}${photo.image_url}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopie(true);
+      setTimeout(() => setCopie(false), 3000);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const getDescription = (photo) => {
-    if (langue === "mg" && photo.description_mg) return photo.description_mg;
-    return photo.description;
+  const partagerFacebook = (photo) => {
+    const url = encodeURIComponent(`${window.location.origin}${photo.image_url}`);
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, "_blank");
   };
+
+  const partagerTwitter = (photo) => {
+    const url = encodeURIComponent(`${window.location.origin}${photo.image_url}`);
+    const text = encodeURIComponent(photo.titre || "Découvrez nos photos !");
+    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, "_blank");
+  };
+
+  const photoActuelle = lightboxIndex !== null ? photosFiltrees[lightboxIndex] : null;
 
   return (
     <div className="public-page">
-      {/* ===== HERO ===== */}
+      {/* HERO */}
       <section className="gradient-hero py-20 relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute top-10 right-10 w-72 h-72 bg-[#06B6D4]/20 rounded-full blur-3xl" />
         </div>
 
         <div className="public-container relative text-center">
-          <span className="section-badge anim-fade-up">
-            {t("galeriePage.badge")}
-          </span>
-          <h1 className="section-title anim-fade-up delay-100">
+          <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-[#06B6D4] to-[#1E40AF] mb-4 shadow-2xl">
+            <Camera size={40} className="text-white" />
+          </div>
+          <h1 className="text-3xl md:text-5xl font-bold mb-4">
             {t("galeriePage.titre")}
           </h1>
-          <p className="section-subtitle anim-fade-up delay-200">
+          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
             {t("galeriePage.sousTitre")}
           </p>
         </div>
       </section>
 
-      {/* ===== FILTRES ===== */}
-      <section className="py-12 bg-[#0A1628] border-b border-[#1E40AF]/20">
+      {/* CONTENU */}
+      <section className="py-16 bg-[#0A1628]">
         <div className="public-container">
-          <div className="flex flex-wrap justify-center gap-3">
-            {categories.map((cat) => (
+          {/* Filtres */}
+          <div className="flex items-center justify-center gap-2 mb-8 flex-wrap">
+            {[
+              { id: "toutes", label: t("galeriePage.filtreTout") },
+              { id: "espace", label: t("galeriePage.filtreEspace") },
+              { id: "equipement", label: t("galeriePage.filtreEquipement") },
+              { id: "services", label: t("galeriePage.filtreServices") },
+            ].map((f) => (
               <button
-                key={cat.id}
-                onClick={() => setCategorieActive(cat.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition ${
-                  categorieActive === cat.id
-                    ? "bg-gradient-to-r from-[#1E40AF] to-[#06B6D4] text-white shadow-lg shadow-cyan-500/30"
-                    : "bg-white/5 text-gray-300 hover:bg-white/10"
+                key={f.id}
+                onClick={() => setFiltreCategorie(f.id)}
+                className={`px-5 py-2 rounded-full text-sm font-medium transition ${
+                  filtreCategorie === f.id
+                    ? "bg-gradient-to-r from-[#06B6D4] to-[#1E40AF] text-white shadow-lg shadow-cyan-500/30"
+                    : "bg-white/5 text-gray-400 hover:bg-white/10"
                 }`}
               >
-                <cat.icon size={16} />
-                {t(cat.labelKey)}
-                <span
-                  className={`ml-1 px-1.5 py-0.5 rounded text-xs ${
-                    categorieActive === cat.id
-                      ? "bg-white/20"
-                      : "bg-white/10"
-                  }`}
-                >
-                  {cat.id === "all"
-                    ? photos.length
-                    : photos.filter((p) => p.categorie === cat.id).length}
-                </span>
+                {f.label}
               </button>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* ===== CONTENU ===== */}
-      <section className="py-20 bg-[#0A1628]">
-        <div className="public-container">
           {erreur && (
-            <div className="mb-8 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl p-4 flex items-center gap-3">
+            <div className="mb-6 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl p-4 flex items-center gap-3">
               <AlertCircle size={20} />
               <p>{erreur}</p>
             </div>
@@ -171,59 +164,53 @@ export default function Galerie() {
 
           {chargement ? (
             <div className="text-center py-20">
-              <Loader2
-                size={40}
-                className="animate-spin text-[#67E8F9] mx-auto"
-              />
-              <p className="text-gray-400 mt-4">Chargement de la galerie...</p>
+              <Loader2 size={40} className="animate-spin text-[#67E8F9] mx-auto" />
+              <p className="text-gray-400 mt-4">Chargement des photos...</p>
             </div>
           ) : photosFiltrees.length === 0 ? (
-            <div className="text-center py-20 bg-[#112240] rounded-2xl border border-[#1E40AF]/20">
-              <ImageOff size={48} className="text-gray-600 mx-auto mb-4" />
+            <div className="text-center py-20 bg-[#112240] rounded-2xl border border-white/5">
+              <ImageIcon size={48} className="text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                Aucune photo pour le moment
+                {t("galeriePage.messageTitre")}
               </h3>
               <p className="text-sm text-gray-400">
-                {t("galeriePage.messageTitre")}
-              </p>
-              <p className="text-xs text-gray-500 mt-2 max-w-md mx-auto">
                 {t("galeriePage.messageDesc")}
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {photosFiltrees.map((photo, i) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {photosFiltrees.map((photo, index) => (
                 <div
                   key={photo.id}
-                  onClick={() => ouvrirModal(photo, i)}
-                  className="public-card cursor-pointer group overflow-hidden p-0 anim-fade-up hover:scale-[1.02] transition-transform"
-                  style={{ animationDelay: `${i * 0.05}s` }}
+                  onClick={() => ouvrirLightbox(index)}
+                  className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer bg-[#112240] border border-white/5 hover:border-[#06B6D4]/50 transition-all duration-300"
                 >
-                  <div className="h-56 bg-[#0A1628] relative overflow-hidden">
-                    <img
-                      src={photo.image_url}
-                      alt={getTitre(photo)}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                    <div className="absolute top-4 right-4 p-2 rounded-lg bg-black/40 backdrop-blur opacity-0 group-hover:opacity-100 transition">
-                      <ZoomIn size={18} className="text-white" />
+                  <img
+                    src={photo.image_url}
+                    alt={photo.titre || "Photo"}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                  
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="p-3 rounded-full bg-white/20 backdrop-blur">
+                        <ZoomIn size={24} className="text-white" />
+                      </div>
                     </div>
-                    <div className="absolute top-4 left-4">
-                      <span className="px-2 py-1 rounded-full bg-black/40 backdrop-blur text-xs text-white capitalize">
-                        {photo.categorie}
-                      </span>
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                      {photo.titre && (
+                        <h3 className="text-white font-bold text-sm truncate">
+                          {photo.titre}
+                        </h3>
+                      )}
+                      {photo.categorie && (
+                        <p className="text-gray-300 text-xs capitalize">
+                          {photo.categorie}
+                        </p>
+                      )}
                     </div>
-                  </div>
-                  <div className="p-5">
-                    <h3 className="font-semibold text-lg mb-1">
-                      {getTitre(photo)}
-                    </h3>
-                    {getDescription(photo) && (
-                      <p className="text-sm text-gray-400 line-clamp-2">
-                        {getDescription(photo)}
-                      </p>
-                    )}
                   </div>
                 </div>
               ))}
@@ -232,70 +219,108 @@ export default function Galerie() {
         </div>
       </section>
 
-      {/* ===== MODAL LIGHTBOX ===== */}
-      {modalPhoto && (
+      {/* LIGHTBOX */}
+      {photoActuelle && (
         <div
-          className="fixed inset-0 z-50 bg-black/95 backdrop-blur flex items-center justify-center p-4"
-          onClick={fermerModal}
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center"
+          onClick={fermerLightbox}
         >
           {/* Bouton fermer */}
           <button
-            onClick={fermerModal}
-            className="absolute top-4 right-4 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition z-10"
+            onClick={fermerLightbox}
+            className="absolute top-4 right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition"
           >
             <X size={24} />
           </button>
 
-          {/* Précédent */}
+          {/* Navigation précédent */}
           {photosFiltrees.length > 1 && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 photoPrecedente();
               }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition z-10"
+              className="absolute left-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition"
             >
               <ChevronLeft size={32} />
             </button>
           )}
 
-          {/* Suivant */}
+          {/* Image */}
+          <div
+            className="relative max-w-5xl max-h-[85vh] mx-16"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={photoActuelle.image_url}
+              alt={photoActuelle.titre || "Photo"}
+              className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl"
+            />
+            
+            {/* Titre + actions */}
+            <div className="mt-4 flex items-center justify-between gap-4 text-white">
+              <div className="min-w-0">
+                {photoActuelle.titre && (
+                  <h3 className="font-bold text-lg truncate">
+                    {photoActuelle.titre}
+                  </h3>
+                )}
+                <p className="text-sm text-gray-400">
+                  {lightboxIndex + 1} / {photosFiltrees.length}
+                </p>
+              </div>
+
+              {/* Boutons de partage */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => partagerFacebook(photoActuelle)}
+                  className="p-2.5 rounded-lg bg-[#1877F2]/20 hover:bg-[#1877F2]/40 text-[#1877F2] transition"
+                  title="Partager sur Facebook"
+                >
+                  <ThumbsUp size={20} />
+                </button>
+                <button
+                  onClick={() => partagerTwitter(photoActuelle)}
+                  className="p-2.5 rounded-lg bg-[#1DA1F2]/20 hover:bg-[#1DA1F2]/40 text-[#1DA1F2] transition"
+                  title="Partager sur Twitter / X"
+                >
+                  <Share2 size={20} />
+                </button>
+                <button
+                  onClick={() => copierLien(photoActuelle)}
+                  className={`p-2.5 rounded-lg transition ${
+                    copie
+                      ? "bg-green-500/20 text-green-400"
+                      : "bg-white/10 hover:bg-white/20 text-white"
+                  }`}
+                  title="Copier le lien"
+                >
+                  <Link size={20} />
+                </button>
+                <a
+                  href={photoActuelle.image_url}
+                  download
+                  className="p-2.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition"
+                  title="Télécharger"
+                >
+                  <Download size={20} />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation suivant */}
           {photosFiltrees.length > 1 && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 photoSuivante();
               }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition z-10"
+              className="absolute right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition"
             >
               <ChevronRight size={32} />
             </button>
           )}
-
-          {/* Image */}
-          <div
-            className="max-w-4xl w-full max-h-[90vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={modalPhoto.image_url}
-              alt={getTitre(modalPhoto)}
-              className="w-full h-auto max-h-[75vh] object-contain rounded-lg"
-            />
-            <div className="mt-4 text-center">
-              <h3 className="text-white font-bold text-xl mb-1">
-                {getTitre(modalPhoto)}
-              </h3>
-              {getDescription(modalPhoto) && (
-                <p className="text-gray-400 text-sm">
-                  {getDescription(modalPhoto)}
-                </p>
-              )}
-              <p className="text-gray-500 text-xs mt-2">
-                {modalIndex + 1} / {photosFiltrees.length}
-              </p>
-            </div>
-          </div>
         </div>
       )}
     </div>

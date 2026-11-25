@@ -50,7 +50,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
     echo json_encode([
         "message" => "API Cybercafé opérationnelle ✅",
-        "version" => "8.7",
+        "version" => "8.9",
         "routes" => [
             "== Auth Admin ==",
             "POST /api/auth/login",
@@ -72,10 +72,12 @@ if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
             "GET  /api/client/mes-notifications   (client)",
             "POST /api/client/notifications/lire  (client)",
 
-            "== Parrainage ==",
+            "== Parrainage V2 ==",
             "GET  /api/parrainage/verifier-code?code=XXX (public)",
             "GET  /api/client/parrainage/mes-stats (client)",
             "GET  /api/parrainage/admin/liste      (admin)",
+            "GET  /api/parrainage/admin/config     (admin)",
+            "POST /api/parrainage/admin/config     (admin)",
             "POST /api/parrainage/admin/valider    (admin)",
             "POST /api/parrainage/admin/annuler    (admin)",
 
@@ -173,6 +175,13 @@ if ($uri === '/' || $uri === '/api' || $uri === '/api/') {
             "POST /api/rdv/admin/services/supprimer    (admin)",
             "GET  /api/rdv/admin/config                (admin)",
             "POST /api/rdv/admin/config                (admin)",
+
+            "== SMS (Admin) ==",
+            "GET  /api/sms/admin/config                (admin)",
+            "POST /api/sms/admin/config                (admin)",
+            "POST /api/sms/admin/test                  (admin)",
+            "POST /api/sms/admin/envoyer-manuel        (admin)",
+            "GET  /api/sms/admin/historique            (admin)",
 
             "== Profil Admin ==",
             "GET  /api/profil/mon-profil           (admin)",
@@ -494,7 +503,7 @@ switch (true) {
         (new ClientController())->marquerNotificationLue();
         break;
 
-    // ===== PARRAINAGE =====
+    // ===== PARRAINAGE V2 =====
     case $uri === '/api/parrainage/verifier-code' && $method === 'GET':
         require_once __DIR__ . '/../controllers/ParrainageController.php';
         (new ParrainageController())->verifierCode();
@@ -508,6 +517,16 @@ switch (true) {
     case $uri === '/api/parrainage/admin/liste' && $method === 'GET':
         require_once __DIR__ . '/../controllers/ParrainageController.php';
         (new ParrainageController())->listeAdmin();
+        break;
+
+    case $uri === '/api/parrainage/admin/config' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/ParrainageController.php';
+        (new ParrainageController())->getConfigAdmin();
+        break;
+
+    case $uri === '/api/parrainage/admin/config' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/ParrainageController.php';
+        (new ParrainageController())->saveConfig();
         break;
 
     case $uri === '/api/parrainage/admin/valider' && $method === 'POST':
@@ -885,6 +904,32 @@ switch (true) {
     case $uri === '/api/rdv/admin/config' && $method === 'POST':
         require_once __DIR__ . '/../controllers/RendezVousController.php';
         (new RendezVousController())->adminSaveConfig();
+        break;
+
+    // ===== SMS ADMIN =====
+    case $uri === '/api/sms/admin/config' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/SmsController.php';
+        (new SmsController())->getConfig();
+        break;
+
+    case $uri === '/api/sms/admin/config' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/SmsController.php';
+        (new SmsController())->saveConfig();
+        break;
+
+    case $uri === '/api/sms/admin/test' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/SmsController.php';
+        (new SmsController())->envoyerTest();
+        break;
+
+    case $uri === '/api/sms/admin/envoyer-manuel' && $method === 'POST':
+        require_once __DIR__ . '/../controllers/SmsController.php';
+        (new SmsController())->envoyerManuel();
+        break;
+
+    case $uri === '/api/sms/admin/historique' && $method === 'GET':
+        require_once __DIR__ . '/../controllers/SmsController.php';
+        (new SmsController())->getHistorique();
         break;
 
     // ===== PROFIL ADMIN =====

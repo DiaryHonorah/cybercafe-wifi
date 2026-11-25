@@ -55,6 +55,7 @@ import Avis from "./pages/Avis";
 import Support from "./pages/Support";
 import Leaderboard from "./pages/Leaderboard";
 import RendezVous from "./pages/RendezVous";
+import Sms from "./pages/Sms"; // ✅ AJOUT
 import Sauvegarde from "./pages/Sauvegarde";
 import Recettes from "./pages/Recettes";
 import Rapport from "./pages/Rapport";
@@ -116,6 +117,7 @@ function AdminLayout() {
             <Route path="/support" element={<Support />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/rendezvous" element={<RendezVous />} />
+            <Route path="/sms" element={<Sms />} /> {/* ✅ AJOUT */}
             <Route path="/sauvegarde" element={<Sauvegarde />} />
             <Route path="/recettes" element={<Recettes />} />
             <Route path="/rapport" element={<Rapport />} />

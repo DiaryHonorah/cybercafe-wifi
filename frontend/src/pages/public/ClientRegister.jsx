@@ -1,51 +1,100 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   User,
   Mail,
   Phone,
   Lock,
-  Eye,
-  EyeOff,
-  Loader2,
-  AlertCircle,
-  UserPlus,
-  LogIn,
-  CheckCircle2,
   Calendar,
   MapPin,
+  ArrowLeft,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  Gift,
+  Users,
 } from "lucide-react";
-import { useClientAuth } from "../../context/ClientAuthContext";
 import { usePublicLang } from "../../context/PublicLangContext";
+import { useClientAuth } from "../../context/ClientAuthContext";
+
+const API_URL = "http://localhost/cybercafe-wifi/backend/api";
 
 export default function ClientRegister() {
   const navigate = useNavigate();
-  const { inscription } = useClientAuth();
+  const [searchParams] = useSearchParams();
   const { t } = usePublicLang();
+  const { inscription } = useClientAuth();
+
   const [form, setForm] = useState({
     nom: "",
     email: "",
     telephone: "",
     mot_de_passe: "",
-    confirmer_mot_de_passe: "",
+    confirmer_mdp: "",
     date_naissance: "",
     adresse: "",
+    code_parrainage: "",
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [chargement, setChargement] = useState(false);
-  const [erreur, setErreur] = useState(null);
-  const [succes, setSucces] = useState(false);
 
-  const handleChange = (champ, valeur) => {
-    setForm({ ...form, [champ]: valeur });
-    if (erreur) setErreur(null);
+  const [erreur, setErreur] = useState(null);
+  const [succes, setSucces] = useState(null);
+  const [chargement, setChargement] = useState(false);
+  const [parrainInfo, setParrainInfo] = useState(null);
+  const [verifCode, setVerifCode] = useState(false);
+
+  // Récupérer le code parrain depuis l'URL (?code=REF00001)
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (code) {
+      setForm((prev) => ({ ...prev, code_parrainage: code }));
+      verifierCodeParrain(code);
+    }
+  }, [searchParams]);
+
+  const verifierCodeParrain = async (code) => {
+    if (!code) {
+      setParrainInfo(null);
+      return;
+    }
+
+    setVerifCode(true);
+    try {
+      const res = await fetch(`${API_URL}/parrainage/verifier-code?code=${code}`);
+      const data = await res.json();
+      if (data.success) {
+        setParrainInfo(data.parrain);
+      } else {
+        setParrainInfo(null);
+      }
+    } catch (err) {
+      setParrainInfo(null);
+    } finally {
+      setVerifCode(false);
+    }
+  };
+
+  const handleCodeChange = (e) => {
+    const code = e.target.value.toUpperCase();
+    setForm({ ...form, code_parrainage: code });
+    if (code.length >= 5) {
+      verifierCodeParrain(code);
+    } else {
+      setParrainInfo(null);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErreur(null);
+    setSucces(null);
 
-    if (form.mot_de_passe !== form.confirmer_mot_de_passe) {
+    // Validations
+    if (!form.nom.trim() || !form.email.trim() || !form.telephone.trim() || !form.mot_de_passe) {
+      setErreur("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+
+    if (form.mot_de_passe !== form.confirmer_mdp) {
       setErreur(t("clientRegister.erreurMdp"));
       return;
     }
@@ -56,223 +105,273 @@ export default function ClientRegister() {
     }
 
     setChargement(true);
-
     try {
-      await inscription({
+      // On passe par la méthode d'inscription du context
+      const resultat = await inscription({
         nom: form.nom,
         email: form.email,
         telephone: form.telephone,
         mot_de_passe: form.mot_de_passe,
-        date_naissance: form.date_naissance,
-        adresse: form.adresse,
+        date_naissance: form.date_naissance || null,
+        adresse: form.adresse || null,
+        code_parrainage: form.code_parrainage || null,
       });
 
-      setSucces(true);
-      setTimeout(() => navigate("/mon-compte"), 1000);
+      if (resultat.success) {
+        setSucces(t("clientRegister.succes"));
+        setTimeout(() => navigate("/mon-compte"), 1500);
+      } else {
+        setErreur(resultat.message);
+      }
     } catch (err) {
-      setErreur(err.message);
+      setErreur("Erreur serveur");
     } finally {
       setChargement(false);
     }
   };
 
   return (
-    <div className="public-page min-h-screen flex items-center justify-center px-4 py-20">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-[#06B6D4] to-[#1E40AF] mb-4 shadow-2xl shadow-cyan-500/30">
-            <UserPlus size={40} className="text-white" />
-          </div>
-          <h1 className="text-3xl font-bold mb-2">
-            {t("clientRegister.titre")}
-          </h1>
-          <p className="text-gray-400">
-            {t("clientRegister.sousTitre")}
-          </p>
-        </div>
+    <div className="public-page min-h-screen flex items-center justify-center py-12 px-4">
+      <div className="w-full max-w-lg">
+        {/* Bouton retour */}
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#67E8F9] mb-6 transition"
+        >
+          <ArrowLeft size={16} />
+          {t("clientRegister.retourAccueil")}
+        </Link>
 
-        {/* Card */}
-        <div className="public-card p-8 anim-fade-up">
-          {succes && (
-            <div className="mb-6 bg-green-500/10 border border-green-500/30 text-green-400 text-sm rounded-lg p-4 flex items-center gap-3">
-              <CheckCircle2 size={20} />
-              <p>{t("clientRegister.succes")}</p>
+        {/* Carte principale */}
+        <div className="public-card p-8">
+          {/* En-tête */}
+          <div className="text-center mb-8">
+            <div className="inline-flex p-3 rounded-full bg-gradient-to-br from-[#06B6D4] to-[#1E40AF] mb-4">
+              <User size={32} className="text-white" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">
+              {t("clientRegister.titre")}
+            </h1>
+            <p className="text-sm text-gray-400">
+              {t("clientRegister.sousTitre")}
+            </p>
+          </div>
+
+          {/* Messages */}
+          {erreur && (
+            <div className="mb-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg p-3 flex items-center gap-2">
+              <AlertCircle size={16} />
+              <p>{erreur}</p>
             </div>
           )}
-
-          {erreur && (
-            <div className="mb-6 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg p-4 flex items-center gap-3">
-              <AlertCircle size={20} />
-              <p>{erreur}</p>
+          {succes && (
+            <div className="mb-4 bg-green-500/10 border border-green-500/30 text-green-400 text-sm rounded-lg p-3 flex items-center gap-2">
+              <CheckCircle2 size={16} />
+              <p>{succes}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Nom */}
             <div>
               <label className="block text-sm text-gray-400 mb-2">
-                <User size={14} className="inline mr-1" />
                 {t("clientRegister.nom")} *
               </label>
-              <input
-                type="text"
-                value={form.nom}
-                onChange={(e) => handleChange("nom", e.target.value)}
-                required
-                minLength={2}
-                placeholder="Rakoto Jean"
-                className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none transition"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">
-                <Mail size={14} className="inline mr-1" />
-                {t("clientRegister.email")} *
-              </label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                required
-                placeholder="exemple@email.com"
-                className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none transition"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">
-                <Phone size={14} className="inline mr-1" />
-                {t("clientRegister.telephone")} *
-              </label>
-              <input
-                type="tel"
-                value={form.telephone}
-                onChange={(e) => handleChange("telephone", e.target.value)}
-                required
-                minLength={8}
-                placeholder="+261 34 XX XXX XX"
-                className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none transition"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">
-                <Lock size={14} className="inline mr-1" />
-                {t("clientRegister.motDePasse")} *
-              </label>
               <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={form.mot_de_passe}
-                  onChange={(e) => handleChange("mot_de_passe", e.target.value)}
-                  required
-                  minLength={8}
-                  placeholder="Min. 8 caractères"
-                  className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 pr-12 text-white focus:border-[#06B6D4] focus:outline-none transition"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">
-                <Lock size={14} className="inline mr-1" />
-                {t("clientRegister.confirmerMdp")} *
-              </label>
-              <input
-                type={showPassword ? "text" : "password"}
-                value={form.confirmer_mot_de_passe}
-                onChange={(e) =>
-                  handleChange("confirmer_mot_de_passe", e.target.value)
-                }
-                required
-                minLength={8}
-                placeholder="••••••••"
-                className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none transition"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">
-                  <Calendar size={14} className="inline mr-1" />
-                  {t("clientRegister.dateNaissance")}
-                </label>
-                <input
-                  type="date"
-                  value={form.date_naissance}
-                  onChange={(e) =>
-                    handleChange("date_naissance", e.target.value)
-                  }
-                  className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none transition"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">
-                  <MapPin size={14} className="inline mr-1" />
-                  {t("clientRegister.adresse")}
-                </label>
+                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input
                   type="text"
-                  value={form.adresse}
-                  onChange={(e) => handleChange("adresse", e.target.value)}
-                  placeholder="Ambalavao"
-                  className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 px-4 text-white focus:border-[#06B6D4] focus:outline-none transition"
+                  value={form.nom}
+                  onChange={(e) => setForm({ ...form, nom: e.target.value })}
+                  placeholder="Rakoto Jean"
+                  className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none"
+                  required
                 />
               </div>
             </div>
 
-            <p className="text-xs text-gray-500">
-              * {t("clientRegister.champsObligatoires")}
-            </p>
+            {/* Email */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">
+                {t("clientRegister.email")} *
+              </label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="jean@example.com"
+                  className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none"
+                  required
+                />
+              </div>
+            </div>
 
+            {/* Téléphone */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">
+                {t("clientRegister.telephone")} *
+              </label>
+              <div className="relative">
+                <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input
+                  type="tel"
+                  value={form.telephone}
+                  onChange={(e) => setForm({ ...form, telephone: e.target.value })}
+                  placeholder="+261 34 12 345 67"
+                  className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Mot de passe */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">
+                  {t("clientRegister.motDePasse")} *
+                </label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="password"
+                    value={form.mot_de_passe}
+                    onChange={(e) => setForm({ ...form, mot_de_passe: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">
+                  {t("clientRegister.confirmerMdp")} *
+                </label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="password"
+                    value={form.confirmer_mdp}
+                    onChange={(e) => setForm({ ...form, confirmer_mdp: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Date naissance + Adresse */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">
+                  {t("clientRegister.dateNaissance")}
+                </label>
+                <div className="relative">
+                  <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="date"
+                    value={form.date_naissance}
+                    onChange={(e) => setForm({ ...form, date_naissance: e.target.value })}
+                    className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">
+                  {t("clientRegister.adresse")}
+                </label>
+                <div className="relative">
+                  <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="text"
+                    value={form.adresse}
+                    onChange={(e) => setForm({ ...form, adresse: e.target.value })}
+                    placeholder="Ambalavao"
+                    className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:border-[#06B6D4] focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Code Parrainage (optionnel) */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-2 flex items-center gap-2">
+                <Gift size={14} className="text-yellow-400" />
+                Code de parrainage (optionnel)
+              </label>
+              <div className="relative">
+                <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input
+                  type="text"
+                  value={form.code_parrainage}
+                  onChange={handleCodeChange}
+                  placeholder="REF00001"
+                  className="w-full bg-[#0A1628] border border-[#1E40AF]/30 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:border-[#F59E0B] focus:outline-none uppercase"
+                  style={{ textTransform: "uppercase" }}
+                />
+                {verifCode && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 size={16} className="animate-spin text-gray-400" />
+                  </div>
+                )}
+              </div>
+              {parrainInfo && (
+                <div className="mt-2 bg-green-500/10 border border-green-500/30 rounded-lg p-2 flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-green-400 flex-shrink-0" />
+                  <p className="text-xs text-green-400">
+                    Code valide : {parrainInfo.nom}
+                  </p>
+                </div>
+              )}
+              {form.code_parrainage && !parrainInfo && !verifCode && form.code_parrainage.length >= 5 && (
+                <div className="mt-2 bg-red-500/10 border border-red-500/30 rounded-lg p-2 flex items-center gap-2">
+                  <AlertCircle size={14} className="text-red-400 flex-shrink-0" />
+                  <p className="text-xs text-red-400">Code invalide</p>
+                </div>
+              )}
+              <p className="text-xs text-gray-500 mt-2">
+                Si un ami vous a parrainé, entrez son code pour recevoir un bonus !
+              </p>
+            </div>
+
+            {/* Bouton */}
             <button
               type="submit"
-              disabled={chargement || succes}
-              className="btn-public-cyan w-full justify-center disabled:opacity-60"
+              disabled={chargement}
+              className="w-full btn-public-cyan justify-center py-3 mt-2 disabled:opacity-50"
             >
               {chargement ? (
                 <>
-                  <Loader2 size={18} className="animate-spin" />
+                  <Loader2 size={16} className="animate-spin" />
                   {t("clientRegister.creation")}
                 </>
               ) : (
                 <>
-                  <UserPlus size={18} />
+                  <User size={16} />
                   {t("clientRegister.creerCompte")}
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-[#1E40AF]/20 text-center">
-            <p className="text-sm text-gray-400 mb-2">
-              {t("clientRegister.dejaCompte")}
+          {/* Lien connexion */}
+          <div className="mt-6 pt-6 border-t border-white/5 text-center text-sm">
+            <p className="text-gray-400">
+              {t("clientRegister.dejaCompte")}{" "}
+              <Link to="/connexion" className="text-[#67E8F9] hover:text-[#06B6D4] font-medium">
+                {t("clientRegister.seConnecter")}
+              </Link>
             </p>
-            <Link
-              to="/connexion"
-              className="inline-flex items-center gap-2 text-[#67E8F9] hover:text-[#06B6D4] font-medium transition"
-            >
-              <LogIn size={16} />
-              {t("clientRegister.seConnecter")}
-            </Link>
           </div>
         </div>
 
-        <div className="mt-6 text-center">
-          <Link
-            to="/"
-            className="text-sm text-gray-500 hover:text-[#67E8F9] transition"
-          >
-            ← {t("clientRegister.retourAccueil")}
-          </Link>
+        {/* Astuce */}
+        <div className="mt-4 bg-gradient-to-r from-[#F59E0B]/10 to-[#DC2626]/10 border border-yellow-500/30 rounded-lg p-3">
+          <p className="text-xs text-gray-300 text-center">
+            🎁 <strong>Gagnez 500 Ar</strong> par ami inscrit grâce à votre code de parrainage !
+          </p>
         </div>
       </div>
     </div>

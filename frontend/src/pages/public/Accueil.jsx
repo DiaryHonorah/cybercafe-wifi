@@ -30,6 +30,7 @@ import {
 import { usePublicLang } from "../../context/PublicLangContext";
 import Reveal from "../../components/Reveal";
 import CommentCaMarche from "../../components/CommentCaMarche";
+import RecommandationsCarousel from "../../components/RecommandationsCarousel"; // ✅ AJOUT
 
 // ===== Hook compteur animé =====
 function useCountUp(end, duration = 2000, demarrer = false) {
@@ -209,7 +210,6 @@ export default function Accueil() {
       {/* ===== HERO SECTION AVEC ANIMATIONS ===== */}
       {/* ============================================ */}
       <section className="relative overflow-hidden gradient-hero py-20 md:py-32 min-h-[85vh] flex items-center">
-        {/* Particules animées en arrière-plan */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 left-10 w-72 h-72 bg-[#06B6D4]/20 rounded-full blur-3xl anim-float" />
           <div
@@ -220,7 +220,6 @@ export default function Accueil() {
           />
           <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-[#7C3AED]/20 rounded-full blur-3xl anim-float delay-500" />
 
-          {/* Petites particules */}
           {[...Array(20)].map((_, i) => (
             <div
               key={i}
@@ -240,7 +239,6 @@ export default function Accueil() {
 
         <div className="public-container relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            {/* Badge Starlink */}
             <div className="inline-flex items-center gap-2 bg-white/5 backdrop-blur border border-[#06B6D4]/30 px-4 py-2 rounded-full mb-6 anim-fade-in-up">
               <span className="w-2 h-2 bg-[#06B6D4] rounded-full animate-pulse" />
               <Sparkles size={14} className="text-[#67E8F9]" />
@@ -249,7 +247,6 @@ export default function Accueil() {
               </span>
             </div>
 
-            {/* Titre animé */}
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 anim-fade-in-up delay-100">
               {t("accueil.titre1")}
               <br />
@@ -266,7 +263,6 @@ export default function Accueil() {
               </span>
             </h1>
 
-            {/* Description */}
             <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto anim-fade-in-up delay-200">
               {t("accueil.description1")}
               <span className="text-[#67E8F9] font-semibold">
@@ -278,7 +274,6 @@ export default function Accueil() {
               {t("accueil.description4")}
             </p>
 
-            {/* Boutons CTA */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center anim-fade-in-up delay-300">
               <Link
                 to="/portail"
@@ -304,7 +299,6 @@ export default function Accueil() {
               </Link>
             </div>
 
-            {/* Statistiques animées */}
             <div
               ref={statRef}
               className="grid grid-cols-3 gap-4 md:gap-8 mt-16 max-w-2xl mx-auto anim-fade-in-up delay-400"
@@ -344,7 +338,6 @@ export default function Accueil() {
               </div>
             </div>
 
-            {/* Scroll indicator */}
             <div className="mt-12 anim-bounce-soft">
               <ChevronRight
                 size={24}
@@ -388,7 +381,6 @@ export default function Accueil() {
                   </h3>
                   <p className="text-sm text-gray-400">{service.description}</p>
 
-                  {/* Barre décorative */}
                   <div className="mt-4 h-1 bg-white/5 rounded-full overflow-hidden">
                     <div
                       className={`h-full bg-gradient-to-r ${service.couleur} rounded-full w-0 group-hover:w-full transition-all duration-700`}
@@ -417,6 +409,16 @@ export default function Accueil() {
       {/* ===== COMMENT ÇA MARCHE ===== */}
       {/* ============================================ */}
       <CommentCaMarche />
+
+      {/* ============================================ */}
+      {/* ===== RECOMMANDATIONS (NOUVEAU) ===== */}
+      {/* ============================================ */}
+      <RecommandationsCarousel
+        titre="Recommandé pour vous"
+        sousTitre="Les forfaits les plus adaptés à vos besoins"
+        limite={6}
+        contexte="accueil"
+      />
 
       {/* ============================================ */}
       {/* ===== AVANTAGES ===== */}
@@ -540,7 +542,6 @@ export default function Accueil() {
           </Reveal>
 
           <div className="max-w-3xl mx-auto">
-            {/* Témoignage actif */}
             <Reveal>
               <div className="relative">
                 <div className="absolute -top-6 -left-6 w-20 h-20 bg-[#06B6D4]/10 rounded-full blur-2xl" />
@@ -553,7 +554,6 @@ export default function Accueil() {
                     fill="currentColor"
                   />
 
-                  {/* Étoiles */}
                   <div className="flex gap-1 mb-6">
                     {[...Array(temoignages[temoignageActif].note)].map(
                       (_, i) => (
@@ -592,7 +592,6 @@ export default function Accueil() {
               </div>
             </Reveal>
 
-            {/* Indicateurs */}
             <div className="flex justify-center gap-2 mt-8">
               {temoignages.map((_, i) => (
                 <button
@@ -618,7 +617,6 @@ export default function Accueil() {
         <div className="public-container">
           <Reveal>
             <div className="max-w-4xl mx-auto bg-gradient-to-br from-[#1E40AF] via-[#0891B2] to-[#06B6D4] rounded-3xl p-10 md:p-16 text-center relative overflow-hidden shadow-2xl">
-              {/* Effets décoratifs */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl anim-float" />
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl anim-float delay-500" />
 

@@ -4,127 +4,199 @@ const ClientAuthContext = createContext(null);
 
 const API_URL = "http://localhost/cybercafe-wifi/backend/api";
 
-export function ClientAuthProvider({ children }) {
-  const [client, setClient] = useState(() => {
-    const stored = localStorage.getItem("client_data");
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  });
+/**
+ * Helper robuste : fetch + lecture texte + parse JSON sécurisé
+ * Ne plante JAMAIS sur JSON.parse, retourne TOUJOURS un objet
+ */
+async function fetchJsonSafe(url, options = {}) {
+  try {
+    const res = await fetch(url, options);
+    const text = await res.text();
 
+    console.log(`🔍 [${options.method || 'GET'} ${url}] Status=${res.status}, Longueur=${text.length}`);
+
+    // Réponse vide → erreur serveur
+    if (!text || text.trim() === '') {
+      console.error(`🚨 [${url}] Réponse VIDE du serveur (Status ${res.status})`);
+      return {
+        ok: false,
+        status: res.status,
+        error: `Le serveur a renvoyé une réponse vide (Status ${res.status}). Vérifie les logs PHP.`,
+      };
+    }
+
+    // Tentative de parse JSON
+    try {
+      const data = JSON.parse(text);
+      return { ok: res.ok, status: res.status, data };
+    } catch (e) {
+      // Pas du JSON → probablement HTML (erreur PHP)
+      console.error(`🚨 [${url}] Réponse non-JSON (Status ${res.status}):`, text.substring(0, 500));
+      return {
+        ok: false,
+        status: res.status,
+        error: `Le serveur a renvoyé une réponse invalide (Status ${res.status}). Vérifie les logs PHP. Détail : ${text.substring(0, 200)}`,
+      };
+    }
+  } catch (err) {
+    console.error(`❌ [${url}] Erreur réseau:`, err);
+    return {
+      ok: false,
+      status: 0,
+      error: `Impossible de contacter le serveur. Vérifie qu'Apache et MySQL sont démarrés. (${err.message})`,
+    };
+  }
+}
+
+export function ClientAuthProvider({ children }) {
+  const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const getToken = () => localStorage.getItem("client_token");
+  useEffect(() => {
+    const token = localStorage.getItem("client_token");
+    const data = localStorage.getItem("client_data");
+    if (token && data) {
+      try {
+        setClient(JSON.parse(data));
+      } catch (err) {
+        console.error("Erreur parsing client_data:", err);
+        localStorage.removeItem("client_data");
+        localStorage.removeItem("client_token");
+      }
+    }
+    setLoading(false);
+  }, []);
 
-  const setAuth = (client, token) => {
-    setClient(client);
-    localStorage.setItem("client_data", JSON.stringify(client));
-    localStorage.setItem("client_token", token);
-  };
+  // ================ INSCRIPTION ================
+  const inscription = async (donnees) => {
+    console.log("📝 [INSCRIPTION] Données envoyées:", donnees);
 
-  const clearAuth = () => {
-    setClient(null);
-    localStorage.removeItem("client_data");
-    localStorage.removeItem("client_token");
-  };
-
-  // Inscription
-  const inscription = async (data) => {
-    const res = await fetch(`${API_URL}/client/auth/inscription`, {
+    const result = await fetchJsonSafe(`${API_URL}/client/auth/inscription`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      credentials: "omit",
+      body: JSON.stringify(donnees),
     });
 
-    const result = await res.json();
-
-    if (!res.ok || !result.success) {
-      throw new Error(result.message || "Erreur lors de l'inscription");
+    if (result.error) {
+      return { success: false, message: result.error };
     }
 
-    setAuth(result.client, result.token);
-    return result;
+    const data = result.data;
+    console.log("📥 [INSCRIPTION] Réponse backend:", data);
+
+    if (data.success) {
+      if (data.token && data.client) {
+        localStorage.setItem("client_token", data.token);
+        localStorage.setItem("client_data", JSON.stringify(data.client));
+        setClient(data.client);
+      }
+      return {
+        success: true,
+        message: data.message || "Inscription réussie",
+        client: data.client,
+      };
+    } else {
+      return {
+        success: false,
+        message: data.message || data.erreur || "Erreur d'inscription",
+      };
+    }
   };
 
-  // Connexion
-  const connexion = async (email, motDePasse) => {
-    const res = await fetch(`${API_URL}/client/auth/connexion`, {
+  // ================ CONNEXION ================
+  const connexion = async (email, mot_de_passe) => {
+    console.log("🔐 [LOGIN] Tentative avec:", email);
+
+    const result = await fetchJsonSafe(`${API_URL}/client/auth/connexion`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, mot_de_passe: motDePasse }),
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      credentials: "omit",
+      body: JSON.stringify({ email, mot_de_passe }),
     });
 
-    const result = await res.json();
-
-    if (!res.ok || !result.success) {
-      throw new Error(result.message || "Erreur de connexion");
+    if (result.error) {
+      return { success: false, message: result.error };
     }
 
-    setAuth(result.client, result.token);
-    return result;
+    const data = result.data;
+    console.log("📥 [LOGIN] Réponse backend:", data);
+
+    if (data.success) {
+      if (data.token && data.client) {
+        localStorage.setItem("client_token", data.token);
+        localStorage.setItem("client_data", JSON.stringify(data.client));
+        setClient(data.client);
+      }
+      return {
+        success: true,
+        message: data.message || "Connexion réussie",
+        client: data.client,
+      };
+    } else {
+      return {
+        success: false,
+        message: data.message || data.erreur || "Email ou mot de passe incorrect",
+      };
+    }
   };
 
-  // Déconnexion
+  // ================ DÉCONNEXION ================
   const deconnexion = async () => {
     try {
-      const token = getToken();
+      const token = localStorage.getItem("client_token");
       if (token) {
         await fetch(`${API_URL}/client/auth/deconnexion`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          credentials: "omit",
         });
       }
-    } catch (e) {
-      // Silencieux
+    } catch (err) {
+      console.error("Erreur déconnexion API:", err);
     } finally {
-      clearAuth();
+      localStorage.removeItem("client_token");
+      localStorage.removeItem("client_data");
+      setClient(null);
     }
   };
 
-  // Vérifier le token au démarrage
-  const verifierAuth = async () => {
-    const token = getToken();
+  // ================ VÉRIFICATION SESSION ================
+  const verifierSession = async () => {
+    const token = localStorage.getItem("client_token");
     if (!token) {
-      setLoading(false);
-      return;
+      setClient(null);
+      return false;
     }
 
-    try {
-      const res = await fetch(`${API_URL}/client/auth/verifier`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
+    const result = await fetchJsonSafe(`${API_URL}/client/auth/verifier`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      credentials: "omit",
+    });
 
-      if (data.success && data.client) {
-        setClient(data.client);
-        localStorage.setItem("client_data", JSON.stringify(data.client));
-      } else {
-        clearAuth();
-      }
-    } catch (e) {
-      clearAuth();
-    } finally {
-      setLoading(false);
+    if (result.error || !result.data?.success) {
+      localStorage.removeItem("client_token");
+      localStorage.removeItem("client_data");
+      setClient(null);
+      return false;
     }
+
+    setClient(result.data.client);
+    localStorage.setItem("client_data", JSON.stringify(result.data.client));
+    return true;
   };
-
-  useEffect(() => {
-    verifierAuth();
-  }, []);
 
   const value = {
     client,
     loading,
+    isAuthenticated: !!client,
     inscription,
     connexion,
     deconnexion,
-    verifierAuth,
-    isAuthenticated: !!client,
+    verifierSession,
   };
 
   return (
@@ -134,10 +206,10 @@ export function ClientAuthProvider({ children }) {
   );
 }
 
-export const useClientAuth = () => {
+export function useClientAuth() {
   const context = useContext(ClientAuthContext);
   if (!context) {
     throw new Error("useClientAuth doit être utilisé dans un ClientAuthProvider");
   }
   return context;
-};
+}

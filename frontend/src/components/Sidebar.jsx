@@ -34,6 +34,7 @@ import {
   LifeBuoy,
   Trophy,
   Wrench,
+  MessageSquare, // ✅ AJOUT
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -52,6 +53,7 @@ const links = [
   { to: "/admin/support", labelKey: "sidebar.support", icon: LifeBuoy, badge: "support" },
   { to: "/admin/leaderboard", labelKey: "sidebar.leaderboard", icon: Trophy },
   { to: "/admin/rendezvous", labelKey: "sidebar.rendezvous", icon: Wrench },
+  { to: "/admin/sms", labelKey: "sidebar.sms", icon: MessageSquare }, // ✅ AJOUT
   { to: "/admin/galerie", labelKey: "sidebar.galerie", icon: Camera },
   { to: "/admin/blog", labelKey: "sidebar.blog", icon: BookOpen },
   { to: "/admin/newsletter", labelKey: "sidebar.newsletter", icon: Send },

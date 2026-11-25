@@ -1121,7 +1121,7 @@ export default function ClientDashboard() {
             </div>
           )}
 
-          {/* ===== ONGLET PARRAINAGE ===== */}
+          {/* ===== ONGLET PARRAINAGE (V2) ===== */}
           {ongletActif === "parrainage" && (
             <div className="anim-fade-up">
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -1135,6 +1135,7 @@ export default function ClientDashboard() {
                 </div>
               ) : !parrainage ? null : (
                 <div className="space-y-4">
+                  {/* Carte principale avec code */}
                   <div className="bg-gradient-to-br from-[#7C3AED] via-[#06B6D4] to-[#1E40AF] rounded-3xl p-6 md:p-8 text-white shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
                     <div className="relative">
@@ -1145,16 +1146,63 @@ export default function ClientDashboard() {
                           <p className="text-white/80 text-sm">{t("clientDash.gagnezParrainage")}</p>
                         </div>
                       </div>
+
+                      {/* Code de parrainage */}
                       <div className="bg-white/20 backdrop-blur rounded-xl p-4 mb-4">
                         <p className="text-white/70 text-xs uppercase mb-1">{t("clientDash.votreCode")}</p>
-                        <p className="text-2xl md:text-3xl font-mono font-bold">{parrainage.stats.code_parrainage}</p>
+                        <p className="text-2xl md:text-3xl font-mono font-bold">
+                          {parrainage.stats.code_parrainage || "..."}
+                        </p>
                       </div>
-                      <button onClick={copierLienParrainage} className="w-full flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur rounded-xl py-3 px-4 font-semibold transition">
-                        {copie ? <><CheckCircle2 size={18} />{t("clientDash.lienCopie")}</> : <><Copy size={18} />{t("clientDash.copierLien")}</>}
+
+                      <button
+                        onClick={copierLienParrainage}
+                        className="w-full flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur rounded-xl py-3 px-4 font-semibold transition"
+                      >
+                        {copie ? (
+                          <>
+                            <CheckCircle2 size={18} />
+                            {t("clientDash.lienCopie")}
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={18} />
+                            {t("clientDash.copierLien")}
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
 
+                  {/* Statistiques de récompenses */}
+                  <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-semibold text-yellow-400">🎁 Récompenses par filleul</p>
+                      <Gift size={16} className="text-yellow-400" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div>
+                        <p className="text-gray-400">Niveau 1 (Vous)</p>
+                        <p className="font-bold text-yellow-400 text-lg">
+                          +{formatPrix(parrainage.config?.recompense_parrain || 500)} Ar
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Niveau 2</p>
+                        <p className="font-bold text-orange-400 text-lg">
+                          +{formatPrix(parrainage.config?.recompense_niveau_2 || 100)} Ar
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Niveau 3</p>
+                        <p className="font-bold text-cyan-400 text-lg">
+                          +{formatPrix(parrainage.config?.recompense_niveau_3 || 50)} Ar
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats générales */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="public-card p-4 text-center">
                       <p className="text-xs text-gray-400 mb-1">{t("clientDash.totalParrainages")}</p>
@@ -1170,31 +1218,45 @@ export default function ClientDashboard() {
                     </div>
                     <div className="public-card p-4 text-center">
                       <p className="text-xs text-gray-400 mb-1">{t("clientDash.totalGagne")}</p>
-                      <p className="text-lg font-bold text-[#67E8F9]">{formatPrix(parrainage.stats.total_gagne)} Ar</p>
+                      <p className="text-lg font-bold text-[#67E8F9]">
+                        {formatPrix(parrainage.stats.total_gagne)} Ar
+                      </p>
                     </div>
                   </div>
 
+                  {/* Mes filleuls directs (Niveau 1) */}
                   {parrainage.parrainages && parrainage.parrainages.length > 0 && (
                     <div className="public-card p-5">
                       <h3 className="font-semibold mb-3 flex items-center gap-2">
                         <Users size={16} className="text-[#67E8F9]" />
-                        {t("clientDash.mesFilleuls")} ({parrainage.parrainages.length})
+                        Mes filleuls directs ({parrainage.parrainages.length})
                       </h3>
                       <div className="space-y-2">
                         {parrainage.parrainages.map((p) => (
-                          <div key={p.id} className="flex items-center justify-between py-2 border-b border-[#1E40AF]/20 last:border-0">
+                          <div
+                            key={p.id}
+                            className="flex items-center justify-between py-2 border-b border-[#1E40AF]/20 last:border-0"
+                          >
                             <div>
                               <p className="text-sm font-medium">{p.filleul_nom}</p>
                               <p className="text-xs text-gray-500">{formatDate(p.created_at)}</p>
                             </div>
                             <div className="text-right">
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                p.statut === "valide" ? "bg-green-500/10 text-green-400"
-                                : p.statut === "annule" ? "bg-red-500/10 text-red-400"
-                                : "bg-orange-500/10 text-orange-400"
-                              }`}>{p.statut}</span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                  p.statut === "valide"
+                                    ? "bg-green-500/10 text-green-400"
+                                    : p.statut === "annule"
+                                    ? "bg-red-500/10 text-red-400"
+                                    : "bg-orange-500/10 text-orange-400"
+                                }`}
+                              >
+                                {p.statut}
+                              </span>
                               {p.statut === "valide" && (
-                                <p className="text-xs text-green-400 mt-1">+{formatPrix(p.recompense_parrain)} Ar</p>
+                                <p className="text-xs text-green-400 mt-1">
+                                  +{formatPrix(parrainage.config?.recompense_parrain || 500)} Ar
+                                </p>
                               )}
                             </div>
                           </div>
@@ -1202,6 +1264,71 @@ export default function ClientDashboard() {
                       </div>
                     </div>
                   )}
+
+                  {/* Niveau 2 */}
+                  {parrainage.niveau_2 && parrainage.niveau_2.length > 0 && (
+                    <div className="public-card p-5">
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Users size={16} className="text-orange-400" />
+                        Filleuls de niveau 2 ({parrainage.niveau_2.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {parrainage.niveau_2.map((f) => (
+                          <div
+                            key={f.id}
+                            className="flex items-center justify-between py-2 border-b border-[#1E40AF]/20 last:border-0"
+                          >
+                            <p className="text-sm">{f.filleul_nom}</p>
+                            <p className="text-xs text-orange-400">
+                              +{formatPrix(parrainage.config?.recompense_niveau_2 || 100)} Ar / filleul validé
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Niveau 3 */}
+                  {parrainage.niveau_3 && parrainage.niveau_3.length > 0 && (
+                    <div className="public-card p-5">
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Users size={16} className="text-cyan-400" />
+                        Filleuls de niveau 3 ({parrainage.niveau_3.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {parrainage.niveau_3.map((f) => (
+                          <div
+                            key={f.id}
+                            className="flex items-center justify-between py-2 border-b border-[#1E40AF]/20 last:border-0"
+                          >
+                            <p className="text-sm">{f.filleul_nom}</p>
+                            <p className="text-xs text-cyan-400">
+                              +{formatPrix(parrainage.config?.recompense_niveau_3 || 50)} Ar / filleul validé
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Comment ça marche */}
+                  <div className="public-card p-5">
+                    <h3 className="font-semibold mb-3">💡 Comment ça marche ?</h3>
+                    <div className="space-y-2 text-sm text-gray-400">
+                      <div className="flex gap-3">
+                        <span className="bg-[#06B6D4] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold text-xs">1</span>
+                        <span>Partagez votre code ou lien avec vos amis</span>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="bg-[#06B6D4] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold text-xs">2</span>
+                        <span>Ils s'inscrivent avec votre code et effectuent un premier achat</span>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="bg-[#06B6D4] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold text-xs">3</span>
+                        <span>Vous recevez votre récompense + les commissions sur les niveaux 2 et 3</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
